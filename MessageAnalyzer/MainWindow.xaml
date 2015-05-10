@@ -7,6 +7,7 @@
         mc:Ignorable="d"
         Title="Message Analyzer" Height="350" Width="525">
     <StackPanel>
+        <TextBlock HorizontalAlignment="Center" Margin="0,10,0,0">Welcome to the Message Analyzer, pick a service:</TextBlock>
         <Button>FB</Button>
         <Button>WhatsApp</Button>
         <Button>SMS</Button>
