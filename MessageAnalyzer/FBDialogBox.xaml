@@ -26,7 +26,7 @@
                 <RadioButton x:Name="GroupRadioButton" GroupName="choices" Content="Group" Margin="10, 0, 0, 0"/>
             </StackPanel>
 
-            <TextBlock Text="Conversation ID" FontWeight="Light" Margin="10, 0, 10, 0" FontSize="18"/>
+            <TextBlock Text="Friend ID" FontWeight="Light" Margin="10, 0, 10, 0" FontSize="18"/>
             <TextBox x:Name="IdTextBox" Margin="10, 2, 10, 10" Height="20"/>
         </StackPanel>
 
