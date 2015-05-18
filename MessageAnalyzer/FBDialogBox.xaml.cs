@@ -16,7 +16,6 @@ namespace MessageAnalyzer
     {
         readonly static Uri BaseAddress = new Uri("https://www.facebook.com");
 
-        private const char Sepr = '|';
         private const int MessageLimit = 5000;
 
         static HttpClient _client;
@@ -40,55 +39,60 @@ namespace MessageAnalyzer
         {
             var buttonText = ((Button)sender).Content.ToString();
 
-            if (buttonText == "Log in")  // first screen
+            if (buttonText == "Log in")
+                Login_Click();
+            else
+                Message_Click();
+        }
+
+        private void Login_Click()
+        {
+            var email = EmailTextBox.Text;
+            var password = PasswordEntry.Password;
+
+            // simple validity checks
+            if (!email.Contains("@"))
+                StatusBlock.Text = "Invalid email";
+            else if (password.Length < 1)
+                StatusBlock.Text = "Invalid password";
+            else
             {
-                var email = EmailTextBox.Text;
-                var password = PasswordEntry.Password;
+                // gather session info
+                var fbInfo = FB_login(email, password, _client);
+                _accessToken = fbInfo.Item1;
+                _myId = fbInfo.Item2;
 
-//                StatusBlock.Text = "Logging in...";
-
-                // simple validity checks
-                if (!email.Contains("@"))
-                    StatusBlock.Text = "Invalid email";
-                else if (password.Length < 1)
-                    StatusBlock.Text = "Invalid password";
+                if (_accessToken.Length == 0)
+                    StatusBlock.Text = "Login failed";
                 else
                 {
-                    var fbInfo = FB_login(email, password, _client);
-                    _accessToken = fbInfo.Item1;
-                    _myId = fbInfo.Item2;
-
-                    if (_accessToken.Length == 0)
-                        StatusBlock.Text = "Login failed";
-                    else
-                    {
-                        // switch screens
-                        AccountStackPanel.Visibility = Visibility.Collapsed;
-                        DetailsStackPanel.Visibility = Visibility.Visible;
-                        OkButton.Content = "Punch it!";
-                    }
+                    // switch screens
+                    AccountStackPanel.Visibility = Visibility.Collapsed;
+                    DetailsStackPanel.Visibility = Visibility.Visible;
+                    OkButton.Content = "Punch it!";
                 }
             }
-            else  // second screen
-            {
-                StatusBlock.Text = "Login successful!";
+        }
 
-                var isGroup = !FriendRadioButton.IsChecked.GetValueOrDefault();
-                var convoId = IdTextBox.Text;
+        private void Message_Click()
+        {
+            StatusBlock.Text = "Login successful!";
 
-                var convoName = isGroup ?
-                    GroupNameFromFbId(convoId, _client) : FriendNameFromFbId(convoId, _client);
+            var isGroup = !FriendRadioButton.IsChecked.GetValueOrDefault();
+            var convoId = IdTextBox.Text;
 
-                StatusBlock.Text = "Getting conversations with " + convoName;
+            var convoName = isGroup ?
+                GroupNameFromFbId(convoId, _client) : FriendNameFromFbId(convoId, _client);
 
-                // TODO: Check to make sure friend/group exists
-                var got = GetMessages(_client, _accessToken, _myId, convoId, convoName, isGroup, StatusBlock);
+            StatusBlock.Text = "Getting conversations with " + convoName;
 
-                StatusBlock.Text = got;
-                OkButton.Visibility = Visibility.Hidden;
-                DetailsStackPanel.Visibility = Visibility.Collapsed;
-                CancelButton.Content = "Exit";
-            }
+            // TODO: Check to make sure friend/group exists
+            var got = GetMessages(_client, _accessToken, _myId, convoId, convoName, isGroup, StatusBlock);
+
+            StatusBlock.Text = got;
+            OkButton.Visibility = Visibility.Hidden;
+            DetailsStackPanel.Visibility = Visibility.Collapsed;
+            CancelButton.Content = "Exit";
         }
 
         private static Tuple<string, string> FB_login(string username, string password, HttpClient client)
@@ -202,7 +206,7 @@ namespace MessageAnalyzer
                                 body += attachment["attach_type"].ToString();
 
                         // TODO: JSONify
-                        output.WriteLine(String.Join(Sepr.ToString(), date, author, body, source, location));
+                        output.WriteLine(String.Join(Stuff.Sepr.ToString(), date, author, body, source, location));
                     }
 
                     if (messages.Count < MessageLimit)
