@@ -1,7 +1,8 @@
 ﻿<Window x:Class="MessageAnalyzer.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Message Analyzer" Height="280" Width="270">
+        Title="Message Analyzer" Height="280" Width="270"
+        Icon="message.ico">
     <StackPanel>
         <TextBlock HorizontalAlignment="Center" Margin="0, 10, 0, 0" Text="Services" FontSize="22" FontWeight="Light"/>
         <Button Name="FbButton" Height="50" Margin="0, 10, 0, 0" Content="FB" Click="FbButton_OnClick"/>

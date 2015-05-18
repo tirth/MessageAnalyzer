@@ -3,11 +3,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Account info" Width="300" ResizeMode="NoResize"
         ShowInTaskbar="False" WindowStartupLocation="CenterOwner"
-        FocusManager.FocusedElement="{Binding ElementName=EmailTextBox}" UseLayoutRounding="False" SizeToContent="Height">
+        FocusManager.FocusedElement="{Binding ElementName=EmailTextBox}" UseLayoutRounding="False" SizeToContent="Height"
+        Icon="facebook.ico">
     <StackPanel>
 
+        <TextBlock x:Name="StatusBlock" Margin="10, 5, 10, 0" HorizontalAlignment="Right" FontWeight="Bold" Foreground="Red"/>
         <StackPanel Name="AccountStackPanel">
-            <TextBlock x:Name="StatusBlock" Margin="10, 5, 10, 0" HorizontalAlignment="Right" FontWeight="Bold" Foreground="Red"/>
 
             <TextBlock Text="FB Email" FontWeight="Light" Margin="10, 0, 10, 0" FontSize="18"/>
             <TextBox x:Name="EmailTextBox" Margin="10, 2" Height="20"/>
@@ -15,18 +16,16 @@
             <TextBlock Text="Password" FontWeight="Light" Margin="10, 10, 10, 0" FontSize="18"/>
             <PasswordBox x:Name="PasswordEntry" Margin="10, 2, 10, 10" Height="20"/>
         </StackPanel>
-        
-        <StackPanel Name="DetailsStackPanel" Visibility="Collapsed">
 
-            <TextBlock x:Name="SecondStatusBlock" Margin="10, 5, 10, 0" HorizontalAlignment="Right" FontWeight="Bold" Foreground="Red"/>
+        <StackPanel Name="DetailsStackPanel" Visibility="Collapsed">
 
             <TextBlock Text="Conversation Type" FontWeight="Light" Margin="10, 0, 10, 0" FontSize="18"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="10, 10, 10, 9">
-                <RadioButton x:Name="FriendRadioButton" GroupName="choices" Content="Friend" IsChecked="True"/>
-                <RadioButton x:Name="GroupRadioButton" GroupName="choices" Content="Group" Margin="10, 0, 0, 0"/>
+                <RadioButton x:Name="FriendRadioButton" GroupName="choices" Content="Friend" IsChecked="True" Checked="radio_checked"/>
+                <RadioButton x:Name="GroupRadioButton" GroupName="choices" Content="Group" Margin="10, 0, 0, 0" Checked="radio_checked"/>
             </StackPanel>
 
-            <TextBlock Text="Friend ID" FontWeight="Light" Margin="10, 0, 10, 0" FontSize="18"/>
+            <TextBlock x:Name="ConvoTypeBlock" Text="Friend ID" FontWeight="Light" Margin="10, 0, 10, 0" FontSize="18"/>
             <TextBox x:Name="IdTextBox" Margin="10, 2, 10, 10" Height="20"/>
         </StackPanel>
 
