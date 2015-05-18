@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using OfficeOpenXml;
 
 namespace MessageAnalyzer
 {
@@ -28,12 +30,11 @@ namespace MessageAnalyzer
 
             foreach (var msg in messages.Select(message => message.Split(Sepr)))
             {
-                var sent = msg[0];
+                var ts = Convert.ToInt64(msg[0]);
                 var sender = msg[1];
                 var body = msg[2];
 
-                var dateTime = DateTimeOffset.FromUnixTimeMilliseconds(Convert.ToInt64(sent)).ToLocalTime();
-                var date = dateTime.ToString("u").Split(' ')[0];
+                var date = DateTimeOffset.FromUnixTimeMilliseconds(ts).ToLocalTime().ToString("yyyy-MM-dd");
 
                 if (!people.Contains(sender))
                     people.Add(sender);
@@ -103,7 +104,66 @@ namespace MessageAnalyzer
         private static void GraphFrequency(Dictionary<string, Dictionary<string, int>> freq,
             List<string> people, string convoName)
         {
+            people.Sort();
 
+            var chartData = new Dictionary<string, ArrayList>();
+            chartData["day"] = new ArrayList(freq.Keys.Count);
+
+            var personCount = new Dictionary<string, int>();
+
+            // prepare dictionaries
+            foreach (var person in people)
+            {
+                chartData[person] = new ArrayList();
+                personCount[person] = 0;
+            }
+
+            // fill dictionaries with column data
+            foreach (var day in freq.Keys)
+            {
+                chartData["day"].Add(day);
+
+                foreach (var person in freq[day].Keys)
+                {
+                    personCount[person] += freq[day][person];
+                    chartData[person].Add(freq[day][person]);
+                }
+            }
+
+            foreach (var day in chartData["me"])
+            {
+                Console.Out.WriteLine(day);
+            }
+
+            Console.ReadKey();
+
+            // prepare chart
+            var newFile = new FileInfo(convoName + ".xlsx");
+
+            if (newFile.Exists)
+            {
+                newFile.Delete();
+                newFile = new FileInfo(convoName + ".xlsx");
+            }
+
+            using (var package = new ExcelPackage(newFile))
+            {
+                var worksheet = package.Workbook.Worksheets.Add("Conversations");
+
+                worksheet.Cells[1, 1].Value = "Date";  // write dates
+                for (var row = 2; row < chartData["day"].Count + 2; row++)
+                    worksheet.Cells[row, 1].Value = chartData["day"][row - 2];
+
+                // write data
+                for (var col = 2; col < people.Count + 2; col++)
+                {
+                    worksheet.Cells[1, col].Value = people[col - 2];
+                    for (var row = 2; row < chartData[people[col - 2]].Count + 2; row++)
+                        worksheet.Cells[row, col].Value = chartData[people[col - 2]][row - 2];
+                }
+
+                package.Save();
+            }
         }
     }
 }
