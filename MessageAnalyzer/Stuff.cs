@@ -13,18 +13,18 @@ namespace MessageAnalyzer
 
         public static void SortByTime(string convoName)
         {
-            var messages = File.ReadAllLines(convoName + ".txt");
+            var messages = File.ReadAllLines(convoName + @".txt");
 
             Array.Sort(messages,
-                (msg1, msg2) => String.CompareOrdinal(msg1.Split(Sepr)[0], msg2.Split(Sepr)[0]));
+                (msg1, msg2) => string.CompareOrdinal(msg1.Split(Sepr)[0], msg2.Split(Sepr)[0]));
 
-            File.WriteAllLines(convoName + ".txt", messages);
+            File.WriteAllLines(convoName + @".txt", messages);
         }
 
         public static Tuple<Dictionary<string, Dictionary<string, int>>, List<string>> ConvoFrequencyByDate(
             string convoName, bool graph = false, bool byLen = true, int[] fromDate = null, int[] toDate = null)
         {
-            var messages = File.ReadAllLines(convoName + ".txt");
+            var messages = File.ReadAllLines(convoName + @".txt");
             var people = new List<string>(2);
             var freq = new Dictionary<string, Dictionary<string, int>>();
 
@@ -129,13 +129,6 @@ namespace MessageAnalyzer
                     chartData[person].Add(freq[day][person]);
                 }
             }
-
-            foreach (var day in chartData["me"])
-            {
-                Console.Out.WriteLine(day);
-            }
-
-            Console.ReadKey();
 
             // prepare chart
             var newFile = new FileInfo(convoName + ".xlsx");

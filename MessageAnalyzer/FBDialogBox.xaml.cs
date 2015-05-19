@@ -12,9 +12,9 @@ using Newtonsoft.Json.Linq;
 
 namespace MessageAnalyzer
 {
-    public partial class InfoDialogBox
+    public partial class FbDialogBox
     {
-        readonly static Uri BaseAddress = new Uri("https://www.facebook.com");
+        readonly static Uri BaseAddress = new Uri(@"https://www.facebook.com");
 
         private const int MessageLimit = 5000;
 
@@ -22,7 +22,7 @@ namespace MessageAnalyzer
         private static string _accessToken;
         private static string _myId;
 
-        public InfoDialogBox()
+        public FbDialogBox()
         {
             InitializeComponent();
 
@@ -141,7 +141,10 @@ namespace MessageAnalyzer
             var groupInfo = Regex.Match(groupPage, groupSearch).ToString();
 
             const string nameSearch = @"name"":""(.*?)""";
-            var name = Regex.Match(groupInfo, nameSearch).Groups[1].Value;
+            var rawName = Regex.Match(groupInfo, nameSearch).Groups[1].Value;
+
+            // make sure file name will be valid
+            var name = new string(rawName.Where(x => !Path.GetInvalidFileNameChars().Contains(x)).ToArray());
 
             return name;
         }
@@ -154,10 +157,15 @@ namespace MessageAnalyzer
 
             var checkedButton = ((RadioButton)sender).Content.ToString();
 
-            if (checkedButton == "Friend")
-                ConvoTypeBlock.Text = "Friend ID";
-            else if (checkedButton == "Group")
-                ConvoTypeBlock.Text = "Conversation ID";
+            switch (checkedButton)
+            {
+                case "Friend":
+                    ConvoTypeBlock.Text = "Friend ID";
+                    break;
+                case "Group":
+                    ConvoTypeBlock.Text = "Conversation ID";
+                    break;
+            }
         }
 
         private static string GetMessages(HttpClient client, string accessToken, string myId, string convoId,
@@ -167,7 +175,7 @@ namespace MessageAnalyzer
             var numMessages = 0;
             var authorIds = new Dictionary<string, string> { { myId, "me" } };
 
-            using (var output = new StreamWriter(convoName + ".txt"))
+            using (var output = new StreamWriter(convoName + @".txt"))
                 while (true)
                 {
                     var page = client.GetStringAsync(ConvoUrl(myId, convoId, accessToken, offset, isGroup)).Result;
@@ -178,7 +186,7 @@ namespace MessageAnalyzer
                     foreach (var message in messages)
                     {
                         var date = (message["timestamp"].ToString());
-                        var source = String.Join(" ", message["source_tags"]).Contains("mobile") ? "mobile" : "web";
+                        var source = string.Join(" ", message["source_tags"]).Contains("mobile") ? "mobile" : "web";
 
                         var authorId = message["author"].ToString().Split(':')[1];
                         string author;
@@ -202,11 +210,10 @@ namespace MessageAnalyzer
                               message["coordinates"]["longitude"];
 
                         if (message["has_attachment"] != null)
-                            foreach (var attachment in message["attachments"])
-                                body += attachment["attach_type"].ToString();
+                            body = message["attachments"].Aggregate(body, (current, attachment) => current + attachment["attach_type"].ToString());
 
                         // TODO: JSONify
-                        output.WriteLine(String.Join(Stuff.Sepr.ToString(), date, author, body, source, location));
+                        output.WriteLine(string.Join(Stuff.Sepr.ToString(), date, author, body, source, location));
                     }
 
                     if (messages.Count < MessageLimit)
@@ -216,7 +223,8 @@ namespace MessageAnalyzer
                     statusBlock.Text = numMessages + " so far, getting more";
                 }
 
-            return String.Format("Got {0} messages with {1}", numMessages, convoName);
+            Stuff.SortByTime(convoName + @".txt");
+            return string.Format("Got {0} messages with {1}", numMessages, convoName);
 
 //            foreach (var authorId in authorIds)
 //                Console.Out.WriteLine(authorId.ToString());
@@ -224,7 +232,7 @@ namespace MessageAnalyzer
 
         private static Uri ConvoUrl(string myId, string convoId, string accessToken, int offset, bool isGroup)
         {
-            var convoUrl = String.Format("https://www.facebook.com/ajax/mercury/thread_info.php?" +
+            var convoUrl = string.Format("https://www.facebook.com/ajax/mercury/thread_info.php?" +
                                          "&messages[user_ids][{1}][limit]={4}" +
                                          "&messages[user_ids][{1}][offset]={2}" +
                                          "&client=web_messenger&__user={0}&__a=1&fb_dtsg={3}",
