@@ -9,8 +9,34 @@
         ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
     <StackPanel>
         <TextBlock x:Name="StatusBlock" Margin="10, 5, 10, 0" HorizontalAlignment="Right" FontWeight="Bold" Foreground="Red"/>
-        <TextBlock Text="Conversation:" FontWeight="Light" Margin="10, 0, 10, 0" FontSize="18"/>
-        <ComboBox x:Name="convoPicker" Margin="10, 5, 10, 5"/>
+        <TextBlock Text="Conversation" FontWeight="Light" Margin="10, 0, 10, 0" FontSize="18"/>
+        <ComboBox x:Name="convoPicker" Margin="10, 5, 10, 10" SelectionChanged="convo_picked"/>
+
+        <TextBlock Text="Count by" FontWeight="Light" Margin="10, 0, 10, 5" FontSize="18"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+            <RadioButton Name="byLenRadio" Content="Message length" GroupName="countBy" IsChecked="True"/>
+            <RadioButton Name="byNumRadio" Content="Number of messages" GroupName="countBy" Margin="10, 0, 0, 0"/>
+        </StackPanel>
+
+        <TextBlock Text="Display" FontWeight="Light" Margin="10, 10, 10, 5" FontSize="18"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+            <RadioButton Name="dateRangeRadio" Content="Date range" IsChecked="True" GroupName="display" Click="display_radio"/>
+            <RadioButton Name="timeOfDayRadio" Content="Time of day" Margin="10, 0, 10, 0" GroupName="display" Click="display_radio"/>
+            <RadioButton Name="dayofWeekRadio" Content="Day of week" GroupName="display" Click="display_radio"/>
+        </StackPanel>
+
+        <StackPanel Name="datePickPanel" Margin="10, 10, 10, 5">
+            <DockPanel>
+                <TextBlock Text="From: " Margin="0, 5, 5, 5" FontSize="12"/>
+                <DatePicker x:Name="fromDate" FirstDayOfWeek="Monday"/>
+            </DockPanel>
+            <DockPanel Margin="0, 5, 0, 0">
+                <TextBlock Text="To: " Margin="10, 5, 10, 5" FontSize="12"/>
+                <DatePicker x:Name="toDate" FirstDayOfWeek="Monday"/>
+            </DockPanel>
+        </StackPanel>
+
+
         <Button x:Name="AnalyzeButton" Content="ANALYZE" Margin="10, 10, 10, 10" IsDefault="True" Width="Auto" Height="200" FontSize="20" FontWeight="Bold"
                 Click="AnalyzeClick"/>
     </StackPanel>
