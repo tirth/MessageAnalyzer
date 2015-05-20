@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using Newtonsoft.Json.Linq;
@@ -53,10 +54,12 @@ namespace MessageAnalyzer
                 Message_Click();
         }
 
-        private void Login_Click()
+        private async void Login_Click()
         {
             var email = EmailTextBox.Text;
             var password = PasswordEntry.Password;
+
+            StatusBlock.Text = "Logging in...";
 
             // simple validity checks
             if (!email.Contains("@"))
@@ -65,16 +68,26 @@ namespace MessageAnalyzer
                 StatusBlock.Text = "Invalid password";
             else
             {
+                EmailTextBox.IsEnabled = false;
+                PasswordEntry.IsEnabled = false;
+                OkButton.IsEnabled = false;
+
                 // gather session info
-                var fbInfo = FB_login(email, password, _client);
+                var fbInfo = await FB_login(email, password, _client);
                 _accessToken = fbInfo.Item1;
                 _myId = fbInfo.Item2;
 
                 if (_accessToken.Length == 0)
+                {
                     StatusBlock.Text = "Login failed";
+                    EmailTextBox.IsEnabled = true;
+                    PasswordEntry.IsEnabled = true;
+                    OkButton.IsEnabled = true;
+                }
                 else
                 {
-                    StatusBlock.Text = "Login successful!";
+                    StatusBlock.Text = "Getting recent messages...";
+                    OkButton.IsEnabled = true;
 
                     // switch screens
                     AccountStackPanel.Visibility = Visibility.Collapsed;
@@ -82,13 +95,16 @@ namespace MessageAnalyzer
                     OkButton.Content = "Punch it!";
 
                     // populate recent messages
-                    var recents = GetRecentMessages(_client);
+                    var recents = await GetRecentMessages(_client);
+
+                    StatusBlock.Text = "Done!";
 
                     _authors = recents.Item1;
                     _authors[_myId] = "me";
 
                     var recentThreads = recents.Item2;
 
+                    // separate threads
                     foreach (var thread in recentThreads)
                         if (_authors.ContainsKey(thread.Value))
                             _recentFriendThreads.Add(thread.Key, thread.Value);
@@ -105,37 +121,49 @@ namespace MessageAnalyzer
 
         private void selected_recent(object sender, RoutedEventArgs e)
         {
-            if (RecentsPicker.SelectedIndex < 0) return;
-
-            IdTextBox.Text = FriendRadioButton.IsChecked.GetValueOrDefault() ?
-                _recentFriendThreads[RecentsPicker.SelectedItem.ToString()] :
-                _recentGroupThreads[RecentsPicker.SelectedItem.ToString()];
+            if (RecentsPicker.SelectedIndex >= 0) 
+                IdTextBox.Text = FriendRadioButton.IsChecked.GetValueOrDefault() 
+                    ? _recentFriendThreads[RecentsPicker.SelectedItem.ToString()] 
+                    : _recentGroupThreads[RecentsPicker.SelectedItem.ToString()];
         }
 
-        private void Message_Click()
+        private async void Message_Click()
         {
             var isGroup = !FriendRadioButton.IsChecked.GetValueOrDefault();
             var convoId = IdTextBox.Text;
 
-            var convoName = isGroup ?
-                GroupNameFromFbId(convoId, _client) : FriendNameFromFbId(convoId, _client);
+            string convoName;
 
-            StatusBlock.Text = "Getting conversations with " + convoName;
+            if (isGroup) convoName = await GroupNameFromFbId(convoId, _client);
+            else
+            {
+                try
+                {
+                    convoName = _authors[convoId];
+                }
+                catch (KeyNotFoundException)
+                {
+                    convoName = await FriendNameFromFbId(convoId, _client);
+                    _authors.Add(convoId, convoName);
+                }
+            }
+
+            StatusBlock.Text = "Getting convos with " + convoName + "...";
 
             // TODO: Check to make sure friend/group exists
-            var got = GetMessages(_client, _accessToken, _myId, convoId, convoName, isGroup);
+            var got = await GetMessages(_client, _accessToken, _myId, convoId, convoName, isGroup);
 
             StatusBlock.Text = got;
             OkButton.Content = "Punch it again!";
             CancelButton.Content = "Exit";
         }
 
-        private static Tuple<string, string> FB_login(string username, string password, HttpClient client)
+        private async static Task<Tuple<string, string>> FB_login(string username, string password, HttpClient client)
         {
-            var loginPage = client.GetStringAsync(BaseAddress);
+            var loginPage = await client.GetStringAsync(BaseAddress);
 
             const string lsdSearch = "name=\"lsd\" value=\"(.+?)\"";
-            var lsd = Regex.Match(loginPage.Result, lsdSearch).Groups[1].Value;
+            var lsd = Regex.Match(loginPage, lsdSearch).Groups[1].Value;
 
             var content = new FormUrlEncodedContent(
                 new Dictionary<string, string> {
@@ -144,10 +172,10 @@ namespace MessageAnalyzer
                 {"lsd", lsd}
             });
 
-            var result = client.PostAsync(BaseAddress + "login.php?login_attempt=1", content).Result;
+            var result = await client.PostAsync(BaseAddress + "login.php?login_attempt=1", content);
             result.EnsureSuccessStatusCode();
 
-            var response = result.Content.ReadAsStringAsync().Result;
+            var response = await result.Content.ReadAsStringAsync();
 
             const string tokenSearch = @"fb_dtsg\\"" value=\\""(\w+?)\\";
             var token = Regex.Match(response, tokenSearch).Groups[1].Value;
@@ -158,9 +186,9 @@ namespace MessageAnalyzer
             return new Tuple<string, string>(token, myId);
         }
 
-        private static string FriendNameFromFbId(string id, HttpClient client)
+        private async static Task<string> FriendNameFromFbId(string id, HttpClient client)
         {
-            var personPage = client.GetStringAsync(BaseAddress + id).Result;
+            var personPage = await client.GetStringAsync(BaseAddress + id);
 
             const string nameSearch = @"pageTitle"">(.+)</title>";
             var name = Regex.Match(personPage, nameSearch).Groups[1].Value;
@@ -168,9 +196,9 @@ namespace MessageAnalyzer
             return name;
         }
 
-        private static string GroupNameFromFbId(string id, HttpClient client)
+        private async static Task<string> GroupNameFromFbId(string id, HttpClient client)
         {
-            var groupPage = client.GetStringAsync(BaseAddress + "messages/conversation-" + id).Result;
+            var groupPage = await client.GetStringAsync(BaseAddress + "messages/conversation-" + id);
 
             var groupSearch = @"thread_fbid"":""" + id + @"(.*?)snippet";
             var groupInfo = Regex.Match(groupPage, groupSearch).ToString();
@@ -210,9 +238,9 @@ namespace MessageAnalyzer
         }
 
         // friend dictionary <ID, Name>; thread dictionary <Name, ID>
-        private static Tuple<Dictionary<string, string>, Dictionary<string, string>> GetRecentMessages(HttpClient client)
+        private async static Task<Tuple<Dictionary<string, string>, Dictionary<string, string>>> GetRecentMessages(HttpClient client)
         {
-            var messagePage = client.GetStringAsync(BaseAddress + "messages").Result;
+            var messagePage = await client.GetStringAsync(BaseAddress + "messages");
 
             var friends = new Dictionary<string, string>();
             var threads = new Dictionary<string, string>();
@@ -248,7 +276,7 @@ namespace MessageAnalyzer
             return new Tuple<Dictionary<string, string>, Dictionary<string, string>>(friends, threads);
         }
 
-        private static string GetMessages(HttpClient client, string accessToken, string myId, string convoId,
+        private static async Task<string> GetMessages(HttpClient client, string accessToken, string myId, string convoId,
             string convoName, bool isGroup)
         {
             var offset = 0;
@@ -257,7 +285,7 @@ namespace MessageAnalyzer
             using (var output = new StreamWriter(convoName + @".txt"))
                 while (true)
                 {
-                    var page = client.GetStringAsync(ConvoUrl(myId, convoId, accessToken, offset, isGroup)).Result;
+                    var page = await client.GetStringAsync(ConvoUrl(myId, convoId, accessToken, offset, isGroup)).ConfigureAwait(false);
 
                     var messages = JObject.Parse(page.Substring(9))["payload"]["actions"].Children().ToList();
                     numMessages += messages.Count;
@@ -276,7 +304,7 @@ namespace MessageAnalyzer
                         }
                         catch (KeyNotFoundException)
                         {
-                            author = FriendNameFromFbId(authorId, client);
+                            author = await FriendNameFromFbId(authorId, client).ConfigureAwait(false);
                             _authors.Add(authorId, author);
                         }
 
@@ -292,7 +320,7 @@ namespace MessageAnalyzer
                             body = message["attachments"].Aggregate(body, (current, attachment) => current + attachment["attach_type"].ToString());
 
                         // TODO: JSONify
-                        output.WriteLine(string.Join(Stuff.Sepr.ToString(), date, author, body, source, location));
+                        await output.WriteLineAsync(string.Join(Stuff.Sepr.ToString(), date, author, body, source, location)).ConfigureAwait(false);
                     }
 
                     if (messages.Count < MessageLimit)
