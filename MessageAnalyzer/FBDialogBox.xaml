@@ -7,9 +7,9 @@
         Icon="facebook.ico">
     <StackPanel>
 
-        <TextBlock x:Name="StatusBlock" Margin="10, 5, 10, 0" HorizontalAlignment="Right" FontWeight="Bold" Foreground="Red"/>
-        <StackPanel Name="AccountStackPanel">
+        <TextBlock x:Name="StatusBlock" Margin="10, 2, 10, 0" HorizontalAlignment="Right" FontWeight="Bold" Foreground="Red"/>
 
+        <StackPanel Name="AccountStackPanel">
             <TextBlock Text="FB Email" FontWeight="Light" Margin="10, 0, 10, 0" FontSize="18"/>
             <TextBox x:Name="EmailTextBox" Margin="10, 2" Height="20"/>
 
@@ -18,15 +18,17 @@
         </StackPanel>
 
         <StackPanel Name="DetailsStackPanel" Visibility="Collapsed">
-
             <TextBlock Text="Conversation Type" FontWeight="Light" Margin="10, 0, 10, 0" FontSize="18"/>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="10, 10, 10, 9">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="10, 10, 10, 5">
                 <RadioButton x:Name="FriendRadioButton" GroupName="choices" Content="Friend" IsChecked="True" Checked="radio_checked"/>
                 <RadioButton x:Name="GroupRadioButton" GroupName="choices" Content="Group" Margin="10, 0, 0, 0" Checked="radio_checked"/>
             </StackPanel>
 
+            <TextBlock Name="RecentConversationBlock" Text="Recent Friend Conversations" FontWeight="Light" Margin="10, 0, 10, 0" FontSize="18"/>
+            <ComboBox Name="RecentsPicker" Margin="10, 2, 10, 5" SelectionChanged="selected_recent"/>
+
             <TextBlock x:Name="ConvoTypeBlock" Text="Friend ID" FontWeight="Light" Margin="10, 0, 10, 0" FontSize="18"/>
-            <TextBox x:Name="IdTextBox" Margin="10, 2, 10, 10" Height="20"/>
+            <TextBox x:Name="IdTextBox" Margin="10, 2, 10, 10" Height="20" GotFocus="id_focus"/>
         </StackPanel>
 
         <StackPanel Orientation="Horizontal" Margin="0, 10, 10, 15" HorizontalAlignment="Right" Height="25">

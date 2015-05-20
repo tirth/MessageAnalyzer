@@ -21,6 +21,10 @@ namespace MessageAnalyzer
         static HttpClient _client;
         private static string _accessToken;
         private static string _myId;
+        private static Dictionary<string, string> _authors;
+
+        private static Dictionary<string, string> _recentGroupThreads;
+        private static Dictionary<string, string> _recentFriendThreads;
 
         public FbDialogBox()
         {
@@ -33,6 +37,10 @@ namespace MessageAnalyzer
 
             _client = new HttpClient(handler) { BaseAddress = BaseAddress };
             _client.DefaultRequestHeaders.Add("user-agent", "NCSA_Mosaic/2.0 (Windows 3.1)");
+
+            _authors = new Dictionary<string, string>();
+            _recentFriendThreads = new Dictionary<string, string>();
+            _recentGroupThreads = new Dictionary<string, string>();
         }
 
         private void OkButton_OnClick(object sender, RoutedEventArgs e)
@@ -66,18 +74,46 @@ namespace MessageAnalyzer
                     StatusBlock.Text = "Login failed";
                 else
                 {
+                    StatusBlock.Text = "Login successful!";
+
                     // switch screens
                     AccountStackPanel.Visibility = Visibility.Collapsed;
                     DetailsStackPanel.Visibility = Visibility.Visible;
                     OkButton.Content = "Punch it!";
+
+                    // populate recent messages
+                    var recents = GetRecentMessages(_client);
+
+                    _authors = recents.Item1;
+                    _authors[_myId] = "me";
+
+                    var recentThreads = recents.Item2;
+
+                    foreach (var thread in recentThreads)
+                        if (_authors.ContainsKey(thread.Value))
+                            _recentFriendThreads.Add(thread.Key, thread.Value);
+                        else
+                            _recentGroupThreads.Add(thread.Key, thread.Value);
+
+                    RecentsPicker.ItemsSource = _recentFriendThreads.Keys;
+                    RecentsPicker.SelectedIndex = 0;
+
+                    selected_recent(null, null);
                 }
             }
         }
 
+        private void selected_recent(object sender, RoutedEventArgs e)
+        {
+            if (RecentsPicker.SelectedIndex < 0) return;
+
+            IdTextBox.Text = FriendRadioButton.IsChecked.GetValueOrDefault() ?
+                _recentFriendThreads[RecentsPicker.SelectedItem.ToString()] :
+                _recentGroupThreads[RecentsPicker.SelectedItem.ToString()];
+        }
+
         private void Message_Click()
         {
-            StatusBlock.Text = "Login successful!";
-
             var isGroup = !FriendRadioButton.IsChecked.GetValueOrDefault();
             var convoId = IdTextBox.Text;
 
@@ -87,11 +123,10 @@ namespace MessageAnalyzer
             StatusBlock.Text = "Getting conversations with " + convoName;
 
             // TODO: Check to make sure friend/group exists
-            var got = GetMessages(_client, _accessToken, _myId, convoId, convoName, isGroup, StatusBlock);
+            var got = GetMessages(_client, _accessToken, _myId, convoId, convoName, isGroup);
 
             StatusBlock.Text = got;
-            OkButton.Visibility = Visibility.Hidden;
-            DetailsStackPanel.Visibility = Visibility.Collapsed;
+            OkButton.Content = "Punch it again!";
             CancelButton.Content = "Exit";
         }
 
@@ -161,19 +196,63 @@ namespace MessageAnalyzer
             {
                 case "Friend":
                     ConvoTypeBlock.Text = "Friend ID";
+                    RecentConversationBlock.Text = "Recent Friend Conversations";
+                    RecentsPicker.ItemsSource = _recentFriendThreads.Keys;
                     break;
                 case "Group":
                     ConvoTypeBlock.Text = "Conversation ID";
+                    RecentConversationBlock.Text = "Recent Group Conversations";
+                    RecentsPicker.ItemsSource = _recentGroupThreads.Keys;
                     break;
             }
+
+            RecentsPicker.SelectedIndex = 0;
+        }
+
+        // friend dictionary <ID, Name>; thread dictionary <Name, ID>
+        private static Tuple<Dictionary<string, string>, Dictionary<string, string>> GetRecentMessages(HttpClient client)
+        {
+            var messagePage = client.GetStringAsync(BaseAddress + "messages").Result;
+
+            var friends = new Dictionary<string, string>();
+            var threads = new Dictionary<string, string>();
+
+            // pull out friends
+            const string friendSearch = @"""ordered_threadlists"":(.+)""unread_thread_ids";
+            var friendsRaw = Regex.Match(messagePage, friendSearch).Value;
+            var friendsJson = JObject.Parse("{" + friendsRaw.Remove(friendsRaw.LastIndexOf(",", StringComparison.Ordinal)) + "}");
+
+            // populate friend dictionary
+            foreach (var friend in friendsJson["participants"])
+                friends[friend["fbid"].Value<string>()] = friend["name"].Value<string>();
+
+            // pull out threads
+            const string threadSearch = @"{""threads"":(.+)""ordered_threadlists";
+            var messagesRaw = Regex.Match(messagePage, threadSearch).Value;
+            var messagesJson = JObject.Parse(messagesRaw.Remove(messagesRaw.LastIndexOf(",", StringComparison.Ordinal)) + "}");
+
+            // populate thread dictionary, adding in friend names
+            foreach (var thread in messagesJson["threads"])
+            {
+                var threadId = thread["thread_fbid"].Value<string>();
+                var threadName = thread["name"].Value<string>();
+
+                if (threadName == "")
+                    threadName = thread["participants"].ToList().Count > 2
+                        ? thread["participants"].Aggregate(threadName, (current, person) => current + (friends[person.ToString().Split(':')[1]] + "|"))
+                        : friends[threadId];
+
+                threads[threadName] = threadId;
+            }
+
+            return new Tuple<Dictionary<string, string>, Dictionary<string, string>>(friends, threads);
         }
 
         private static string GetMessages(HttpClient client, string accessToken, string myId, string convoId,
-            string convoName, bool isGroup, TextBlock statusBlock)
+            string convoName, bool isGroup)
         {
             var offset = 0;
             var numMessages = 0;
-            var authorIds = new Dictionary<string, string> { { myId, "me" } };
 
             using (var output = new StreamWriter(convoName + @".txt"))
                 while (true)
@@ -193,12 +272,12 @@ namespace MessageAnalyzer
 
                         try
                         {
-                            author = authorIds[authorId];
+                            author = _authors[authorId];
                         }
                         catch (KeyNotFoundException)
                         {
                             author = FriendNameFromFbId(authorId, client);
-                            authorIds.Add(authorId, author);
+                            _authors.Add(authorId, author);
                         }
 
                         var body = message["body"] ?? message["log_message_body"];
@@ -220,14 +299,10 @@ namespace MessageAnalyzer
                         break;
 
                     offset += MessageLimit;
-                    statusBlock.Text = numMessages + " so far, getting more";
                 }
 
-            Stuff.SortByTime(convoName + @".txt");
+            Stuff.SortByTime(convoName);
             return string.Format("Got {0} messages with {1}", numMessages, convoName);
-
-//            foreach (var authorId in authorIds)
-//                Console.Out.WriteLine(authorId.ToString());
         }
 
         private static Uri ConvoUrl(string myId, string convoId, string accessToken, int offset, bool isGroup)
@@ -241,6 +316,11 @@ namespace MessageAnalyzer
                 convoUrl = convoUrl.Replace("user_ids", "thread_fbids");
 
             return new Uri(convoUrl);
+        }
+
+        private void id_focus(object sender, RoutedEventArgs e)
+        {
+            IdTextBox.Text = "";
         }
     }
 

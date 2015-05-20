@@ -16,17 +16,17 @@ namespace MessageAnalyzer
 
             var result = dlg.ShowDialog();
 
-            StatusBlock.Text = result == true ? "Done." : "Nope.";
+            //            StatusBlock.Text = result == true ? "Done." : "Nope.";
         }
 
         private void WaButton_OnClick(object sender, RoutedEventArgs e)
         {
-            throw new NotImplementedException();
+            var dlg = new UnderConstructionDialog() { Owner = this }.ShowDialog();
         }
 
         private void SmsButton_OnClick(object sender, RoutedEventArgs e)
         {
-            throw new NotImplementedException();
+            var dlg = new UnderConstructionDialog() { Owner = this }.ShowDialog();
         }
 
         private void FreqButton_OnClick(object sender, RoutedEventArgs e)
@@ -35,7 +35,7 @@ namespace MessageAnalyzer
 
             var result = dlg.ShowDialog();
 
-            StatusBlock.Text = result == true ? "Done." : "Nope.";
+            //            StatusBlock.Text = result == true ? "Done." : "Nope.";
         }
     }
 }

@@ -1,0 +1,8 @@
+﻿<Window x:Class="MessageAnalyzer.UnderConstructionDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Under Construction" SizeToContent="Height" Width="300">
+    <StackPanel>
+        <Image Source="work_in_progress.png"/>
+    </StackPanel>
+</Window>

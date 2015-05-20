@@ -8,31 +8,31 @@
         Title="Analyze Frequency" SizeToContent="Height" Width="300"
         ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
     <StackPanel>
-        <TextBlock x:Name="StatusBlock" Margin="10, 5, 10, 0" HorizontalAlignment="Right" FontWeight="Bold" Foreground="Red"/>
+        <TextBlock x:Name="StatusBlock" Margin="10, 2, 10, 0" HorizontalAlignment="Right" FontWeight="Bold" Foreground="Red"/>
         <TextBlock Text="Conversation" FontWeight="Light" Margin="10, 0, 10, 0" FontSize="18"/>
-        <ComboBox x:Name="convoPicker" Margin="10, 5, 10, 10" SelectionChanged="convo_picked"/>
+        <ComboBox x:Name="ConvoPicker" Margin="10, 5, 10, 10" SelectionChanged="convo_picked"/>
 
         <TextBlock Text="Count by" FontWeight="Light" Margin="10, 0, 10, 5" FontSize="18"/>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-            <RadioButton Name="byLenRadio" Content="Message length" GroupName="countBy" IsChecked="True"/>
-            <RadioButton Name="byNumRadio" Content="Number of messages" GroupName="countBy" Margin="10, 0, 0, 0"/>
+            <RadioButton Name="ByLenRadio" Content="Message length" GroupName="countBy" IsChecked="True"/>
+            <RadioButton Name="ByNumRadio" Content="Number of messages" GroupName="countBy" Margin="10, 0, 0, 0"/>
         </StackPanel>
 
         <TextBlock Text="Display" FontWeight="Light" Margin="10, 10, 10, 5" FontSize="18"/>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-            <RadioButton Name="dateRangeRadio" Content="Date range" IsChecked="True" GroupName="display" Click="display_radio"/>
-            <RadioButton Name="timeOfDayRadio" Content="Time of day" Margin="10, 0, 10, 0" GroupName="display" Click="display_radio"/>
-            <RadioButton Name="dayofWeekRadio" Content="Day of week" GroupName="display" Click="display_radio"/>
+            <RadioButton Name="DateRangeRadio" Content="Date range" IsChecked="True" GroupName="display" Click="display_radio"/>
+            <RadioButton Name="TimeOfDayRadio" Content="Time of day" Margin="10, 0, 10, 0" GroupName="display" Click="display_radio" IsEnabled="False"/>
+            <RadioButton Name="DayofWeekRadio" Content="Day of week" GroupName="display" Click="display_radio" IsEnabled="False"/>
         </StackPanel>
 
-        <StackPanel Name="datePickPanel" Margin="10, 10, 10, 5">
+        <StackPanel Name="DatePickPanel" Margin="10, 10, 10, 5">
             <DockPanel>
                 <TextBlock Text="From: " Margin="0, 5, 5, 5" FontSize="12"/>
-                <DatePicker x:Name="fromDate" FirstDayOfWeek="Monday"/>
+                <DatePicker x:Name="FromDate" FirstDayOfWeek="Monday"/>
             </DockPanel>
             <DockPanel Margin="0, 5, 0, 0">
                 <TextBlock Text="To: " Margin="10, 5, 10, 5" FontSize="12"/>
-                <DatePicker x:Name="toDate" FirstDayOfWeek="Monday"/>
+                <DatePicker x:Name="ToDate" FirstDayOfWeek="Monday"/>
             </DockPanel>
         </StackPanel>
 
