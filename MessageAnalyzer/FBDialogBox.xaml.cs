@@ -88,15 +88,17 @@ namespace MessageAnalyzer
                 {
                     StatusBlock.Text = "Getting recent messages...";
                     OkButton.IsEnabled = true;
+                    OkButton.Visibility = Visibility.Hidden;
 
                     // switch screens
                     AccountStackPanel.Visibility = Visibility.Collapsed;
-                    DetailsStackPanel.Visibility = Visibility.Visible;
                     OkButton.Content = "Punch it!";
 
                     // populate recent messages
                     var recents = await GetRecentMessages(_client);
 
+                    OkButton.Visibility = Visibility.Visible;
+                    DetailsStackPanel.Visibility = Visibility.Visible;
                     StatusBlock.Text = "Done!";
 
                     _authors = recents.Item1;
@@ -121,9 +123,9 @@ namespace MessageAnalyzer
 
         private void selected_recent(object sender, RoutedEventArgs e)
         {
-            if (RecentsPicker.SelectedIndex >= 0) 
-                IdTextBox.Text = FriendRadioButton.IsChecked.GetValueOrDefault() 
-                    ? _recentFriendThreads[RecentsPicker.SelectedItem.ToString()] 
+            if (RecentsPicker.SelectedIndex >= 0)
+                IdTextBox.Text = FriendRadioButton.IsChecked.GetValueOrDefault()
+                    ? _recentFriendThreads[RecentsPicker.SelectedItem.ToString()]
                     : _recentGroupThreads[RecentsPicker.SelectedItem.ToString()];
         }
 
@@ -131,12 +133,21 @@ namespace MessageAnalyzer
         {
             var isGroup = !FriendRadioButton.IsChecked.GetValueOrDefault();
             var convoId = IdTextBox.Text;
+            DetailsStackPanel.Visibility = Visibility.Collapsed;
+            OkButton.Visibility = Visibility.Hidden;
 
             string convoName;
 
-            if (isGroup) convoName = await GroupNameFromFbId(convoId, _client);
+            if (isGroup)
+                try
+                {
+                    convoName = _recentGroupThreads[convoId];
+                }
+                catch (KeyNotFoundException)
+                {
+                    convoName = await GroupNameFromFbId(convoId, _client);
+                }
             else
-            {
                 try
                 {
                     convoName = _authors[convoId];
@@ -146,7 +157,6 @@ namespace MessageAnalyzer
                     convoName = await FriendNameFromFbId(convoId, _client);
                     _authors.Add(convoId, convoName);
                 }
-            }
 
             StatusBlock.Text = "Getting convos with " + convoName + "...";
 
@@ -154,6 +164,8 @@ namespace MessageAnalyzer
             var got = await GetMessages(_client, _accessToken, _myId, convoId, convoName, isGroup);
 
             StatusBlock.Text = got;
+            DetailsStackPanel.Visibility = Visibility.Visible;
+            OkButton.Visibility = Visibility.Visible;
             OkButton.Content = "Punch it again!";
             CancelButton.Content = "Exit";
         }

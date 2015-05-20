@@ -131,13 +131,13 @@ namespace MessageAnalyzer
                 }
             }
 
-            // prepare chart
-            var newFile = new FileInfo(convoName + ".xlsx");
+            // prepare worksheet
+            var newFile = new FileInfo(convoName + @".xlsx");
 
             if (newFile.Exists)
             {
                 newFile.Delete();
-                newFile = new FileInfo(convoName + ".xlsx");
+                newFile = new FileInfo(convoName + @".xlsx");
             }
 
             using (var package = new ExcelPackage(newFile))
@@ -151,28 +151,31 @@ namespace MessageAnalyzer
                 // write data (starts at 2 because of headings)
                 for (var col = 2; col < people.Count + 2; col++)
                 {
+                    // participant names
                     worksheet.Cells[1, col].Value = people[col - 2];
+
+                    // message data
                     for (var row = 2; row < chartData[people[col - 2]].Count + 2; row++)
                         worksheet.Cells[row, col].Value = chartData[people[col - 2]][row - 2];
                 }
 
-                var chart = (worksheet.Drawings.AddChart("LineChart", eChartType.Line) as ExcelLineChart);
+                // prepare chart
+                var chart = (worksheet.Drawings.AddChart("LineChart", eChartType.Line));
 
+                // assign series
                 var dataLength = (chartData["day"].Count + 1).ToString();
+                for (var i = 66; i < people.Count + 66; i++)
+                    chart.Series.Add((char) i + "2:" + (char) i + dataLength, "A2:A" + dataLength)
+                        .HeaderAddress = worksheet.Cells[(char) i + "1"];
 
-                var series1 = chart.Series.Add("B2:B" + dataLength, "A2:A" + dataLength);
-                var series2 = chart.Series.Add("C2:C" + dataLength, "A2:A" + dataLength);
-
-                series1.Header = worksheet.Cells["B1"].Value.ToString();
-                series2.Header = worksheet.Cells["C1"].Value.ToString();
-
+                // chart formatting
                 chart.SetSize(400);
                 chart.Title.Text = "Conversation frequency with " + convoName;
                 chart.XAxis.Title.Text = "Date";
                 chart.YAxis.Title.Text = "Messages";
 
-                chart.Style = eChartStyle.Style4;
-
+                chart.Style = eChartStyle.Style2;
+                
                 package.Save();
             }
         }
