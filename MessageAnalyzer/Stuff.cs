@@ -22,11 +22,11 @@ namespace MessageAnalyzer
             File.WriteAllLines(convoName + @".txt", messages);
         }
 
-        public static Tuple<Dictionary<string, Dictionary<string, int>>, List<string>> ConvoFrequencyByDate(
+        public static Tuple<Dictionary<string, Dictionary<string, int>>, Dictionary<string, int>> ConvoFrequencyByDate(
             string convoName, bool graph = false, bool byLen = true, int[] fromDate = null, int[] toDate = null)
         {
             var messages = File.ReadAllLines(convoName + @".txt");
-            var people = new List<string>(2);
+            var people = new Dictionary<string, int>(2);
             var freq = new Dictionary<string, Dictionary<string, int>>();
 
             foreach (var msg in messages.Select(message => message.Split(Sepr)))
@@ -37,8 +37,8 @@ namespace MessageAnalyzer
 
                 var date = DateTimeOffset.FromUnixTimeMilliseconds(ts).ToLocalTime().ToString("yyyy-MM-dd");
 
-                if (!people.Contains(sender))
-                    people.Add(sender);
+                if (!people.ContainsKey(sender))
+                    people[sender] = 0;
 
                 if (!freq.ContainsKey(date))
                     freq[date] = new Dictionary<string, int>();
@@ -48,6 +48,7 @@ namespace MessageAnalyzer
 
                 // count by message length or number of messages
                 freq[date][sender] += byLen ? body.Length : 1;
+                people[sender] += byLen ? body.Length : 1;
             }
 
             // fill in empty days
@@ -93,13 +94,13 @@ namespace MessageAnalyzer
 
             // fill in zeros
             foreach (var day in fullFreq.Values)
-                foreach (var person in people.Where(person => !day.ContainsKey(person)))
+                foreach (var person in people.Keys.Where(person => !day.ContainsKey(person)))
                     day[person] = 0;
 
             if (graph)
-                GraphFrequency(fullFreq, people, convoName);
+                GraphFrequency(fullFreq, people.Keys.ToList(), convoName);
 
-            return new Tuple<Dictionary<string, Dictionary<string, int>>, List<string>>(fullFreq, people);
+            return new Tuple<Dictionary<string, Dictionary<string, int>>, Dictionary<string, int>>(fullFreq, people);
         }
 
         private static void GraphFrequency(Dictionary<string, Dictionary<string, int>> freq,
@@ -107,17 +108,11 @@ namespace MessageAnalyzer
         {
             people.Sort();
 
-            var chartData = new Dictionary<string, ArrayList>();
-            chartData["day"] = new ArrayList(freq.Keys.Count);
+            var chartData = new Dictionary<string, ArrayList> {["day"] = new ArrayList(freq.Keys.Count)};
 
-            var personCount = new Dictionary<string, int>();
-
-            // prepare dictionaries
+            // prepare data dictionary
             foreach (var person in people)
-            {
                 chartData[person] = new ArrayList();
-                personCount[person] = 0;
-            }
 
             // fill dictionaries with column data
             foreach (var day in freq.Keys)
@@ -125,10 +120,7 @@ namespace MessageAnalyzer
                 chartData["day"].Add(day);
 
                 foreach (var person in freq[day].Keys)
-                {
-                    personCount[person] += freq[day][person];
                     chartData[person].Add(freq[day][person]);
-                }
             }
 
             // prepare worksheet
@@ -174,7 +166,7 @@ namespace MessageAnalyzer
                 chart.XAxis.Title.Text = "Date";
                 chart.YAxis.Title.Text = "Messages";
 
-                chart.Style = eChartStyle.Style2;
+                chart.Style = eChartStyle.Style4;
                 
                 package.Save();
             }

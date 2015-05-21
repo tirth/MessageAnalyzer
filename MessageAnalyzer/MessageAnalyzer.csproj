@@ -83,6 +83,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="AnalyzedWindow.xaml.cs">
+      <DependentUpon>AnalyzedWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="FreqDialogBox.xaml.cs">
       <DependentUpon>FreqDialogBox.xaml</DependentUpon>
     </Compile>
@@ -92,6 +95,10 @@
     <Compile Include="UnderConstructionDialog.xaml.cs">
       <DependentUpon>UnderConstructionDialog.xaml</DependentUpon>
     </Compile>
+    <Page Include="AnalyzedWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="FBDialogBox.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

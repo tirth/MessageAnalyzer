@@ -10,7 +10,8 @@
         <Button Name="SmsButton" Height="50" Margin="0, 10, 0, 0" Content="SMS" Click="SmsButton_OnClick" IsEnabled="False"/>
         <Separator Margin="0, 15, 0, 10"></Separator>
         <TextBlock HorizontalAlignment="Center" Text="Analysis" FontSize="22" FontWeight="Light"/>
-        <Button Name="FreqButton" Height="50" Margin="0, 10, 0, 0" Content="Conversation Frequency" Click="FreqButton_OnClick"/>
+        <Button Name="ConvFreqButton" Height="50" Margin="0, 10, 0, 0" Content="Conversation Frequency" Click="FreqButton_OnClick"/>
+        <Button Name="WordFreqButton" Height="50" Margin="0, 10, 0, 0" Content="Word Frequency" Click="WordFreqButton_OnClickFreqButton_OnClick" IsEnabled="False"/>
         <TextBlock Name="StatusBlock" Margin="0,15,0,2" HorizontalAlignment="Center" Text="No warranties express or implied; do not feed after midnight." FontStyle="Italic" FontSize="9"/>
     </StackPanel>
 </Window>

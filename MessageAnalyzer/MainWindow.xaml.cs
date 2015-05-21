@@ -37,5 +37,10 @@ namespace MessageAnalyzer
 
             //            StatusBlock.Text = result == true ? "Done." : "Nope.";
         }
+
+        private void WordFreqButton_OnClickFreqButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            var dlg = new UnderConstructionDialog() { Owner = this }.ShowDialog();
+        }
     }
 }

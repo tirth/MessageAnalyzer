@@ -36,7 +36,6 @@
             </DockPanel>
         </StackPanel>
 
-
         <Button x:Name="AnalyzeButton" Content="ANALYZE" Margin="10, 10, 10, 10" IsDefault="True" Width="Auto" Height="200" FontSize="20" FontWeight="Bold"
                 Click="AnalyzeClick"/>
     </StackPanel>

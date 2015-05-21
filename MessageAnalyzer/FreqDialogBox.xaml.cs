@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -30,6 +31,9 @@ namespace MessageAnalyzer
 
         private void AnalyzeClick(object sender, RoutedEventArgs e)
         {
+            Tuple<Dictionary<string, Dictionary<string, int>>, Dictionary<string, int>> data;
+            var convoName = ConvoPicker.SelectedItem.ToString();
+
             var byLen = ByLenRadio.IsChecked.GetValueOrDefault();
 
             if (DateRangeRadio.IsChecked.GetValueOrDefault())
@@ -37,18 +41,15 @@ namespace MessageAnalyzer
                 var fromD = FromDate.SelectedDate.GetValueOrDefault();
                 var toD = ToDate.SelectedDate.GetValueOrDefault();
 
-                var data = Stuff.ConvoFrequencyByDate(ConvoPicker.SelectedItem.ToString(), true, byLen,
-                    new[] { fromD.Year, fromD.Month, fromD.Day }, new[] { toD.Year, toD.Month, toD.Day });
+                data = Stuff.ConvoFrequencyByDate(convoName, true, byLen,
+                    new[] {fromD.Year, fromD.Month, fromD.Day}, new[] {toD.Year, toD.Month, toD.Day});
             }
             else
-            {
-                var data = Stuff.ConvoFrequencyByDate(ConvoPicker.SelectedItem.ToString(), true, byLen);
-            }
+                data = Stuff.ConvoFrequencyByDate(convoName, true, byLen);
 
             StatusBlock.Text = "Saved " + ConvoPicker.SelectedItem + ".xlsx";
 
-            //            var plot = new PlotWindow() {Owner = this};
-            //            var result = plot.ShowDialog();
+            new AnalyzedWindow(convoName, data) {Owner = this}.Show();
         }
 
         public void display_radio(object sender, RoutedEventArgs e)
