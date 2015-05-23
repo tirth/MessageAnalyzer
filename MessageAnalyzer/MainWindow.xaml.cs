@@ -21,7 +21,9 @@ namespace MessageAnalyzer
 
         private void WaButton_OnClick(object sender, RoutedEventArgs e)
         {
-            var dlg = new UnderConstructionDialog() { Owner = this }.ShowDialog();
+            var dlg = new WhatsAppDialogBox() {Owner = this};
+
+            var result = dlg.ShowDialog();
         }
 
         private void SmsButton_OnClick(object sender, RoutedEventArgs e)

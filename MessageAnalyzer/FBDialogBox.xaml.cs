@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -32,11 +33,7 @@ namespace MessageAnalyzer
             InitializeComponent();
 
             // to persist logged in session
-            var cookieContainer = new CookieContainer();
-
-            var handler = new HttpClientHandler { CookieContainer = cookieContainer };
-
-            _client = new HttpClient(handler) { BaseAddress = BaseAddress };
+            _client = new HttpClient(new HttpClientHandler { CookieContainer = new CookieContainer() }) { BaseAddress = BaseAddress };
             _client.DefaultRequestHeaders.Add("user-agent", "NCSA_Mosaic/2.0 (Windows 3.1)");
 
             _authors = new Dictionary<string, string>();
@@ -123,10 +120,11 @@ namespace MessageAnalyzer
 
         private void selected_recent(object sender, RoutedEventArgs e)
         {
-            if (RecentsPicker.SelectedIndex >= 0)
-                IdTextBox.Text = FriendRadioButton.IsChecked.GetValueOrDefault()
-                    ? _recentFriendThreads[RecentsPicker.SelectedItem.ToString()]
-                    : _recentGroupThreads[RecentsPicker.SelectedItem.ToString()];
+            StatusBlock.Text = "";
+
+            IdTextBox.Text = FriendRadioButton.IsChecked.GetValueOrDefault()
+                ? _recentFriendThreads[RecentsPicker.SelectedItem.ToString()]
+                 : _recentGroupThreads[RecentsPicker.SelectedItem.ToString()];
         }
 
         private async void Message_Click()
@@ -283,6 +281,7 @@ namespace MessageAnalyzer
                         : friends[threadId];
 
                 threads[threadName] = threadId;
+                Trace.WriteLine(threadName + " " + thread["message_count"]);
             }
 
             return new Tuple<Dictionary<string, string>, Dictionary<string, string>>(friends, threads);
@@ -293,54 +292,55 @@ namespace MessageAnalyzer
         {
             var offset = 0;
             var numMessages = 0;
+            var msgs = new List<Message>();
 
-            using (var output = new StreamWriter(convoName + @".txt"))
-                while (true)
+            while (true)
+            {
+                var page = await client.GetStringAsync(ConvoUrl(myId, convoId, accessToken, offset, isGroup)).ConfigureAwait(false);
+
+                var messages = JObject.Parse(page.Substring(9))["payload"]["actions"].Children().ToList();
+                numMessages += messages.Count;
+
+                foreach (var message in messages)
                 {
-                    var page = await client.GetStringAsync(ConvoUrl(myId, convoId, accessToken, offset, isGroup)).ConfigureAwait(false);
+                    var date = (message["timestamp"].ToString());
+                    var source = string.Join(" ", message["source_tags"]).Contains("mobile") ? "mobile" : "web";
 
-                    var messages = JObject.Parse(page.Substring(9))["payload"]["actions"].Children().ToList();
-                    numMessages += messages.Count;
+                    var authorId = message["author"].ToString().Split(':')[1];
+                    string author;
 
-                    foreach (var message in messages)
+                    try
                     {
-                        var date = (message["timestamp"].ToString());
-                        var source = string.Join(" ", message["source_tags"]).Contains("mobile") ? "mobile" : "web";
-
-                        var authorId = message["author"].ToString().Split(':')[1];
-                        string author;
-
-                        try
-                        {
-                            author = _authors[authorId];
-                        }
-                        catch (KeyNotFoundException)
-                        {
-                            author = await FriendNameFromFbId(authorId, client).ConfigureAwait(false);
-                            _authors.Add(authorId, author);
-                        }
-
-                        var body = message["body"] ?? message["log_message_body"];
-                        body = body.ToString().Replace('\n', ' ');
-
-                        var location = message["coordinates"].ToString() == ""
-                            ? "No location"
-                            : message["coordinates"]["latitude"] + "," +
-                              message["coordinates"]["longitude"];
-
-                        if (message["has_attachment"] != null)
-                            body = message["attachments"].Aggregate(body, (current, attachment) => current + attachment["attach_type"].ToString());
-
-                        // TODO: JSONify
-                        await output.WriteLineAsync(string.Join(Stuff.Sepr.ToString(), date, author, body, source, location)).ConfigureAwait(false);
+                        author = _authors[authorId];
+                    }
+                    catch (KeyNotFoundException)
+                    {
+                        author = await FriendNameFromFbId(authorId, client).ConfigureAwait(false);
+                        _authors.Add(authorId, author);
                     }
 
-                    if (messages.Count < MessageLimit)
-                        break;
+                    var body = message["body"] ?? message["log_message_body"];
+                    body = body.ToString().Replace('\n', ' ');
 
-                    offset += MessageLimit;
+                    var location = message["coordinates"].ToString() == ""
+                        ? "No location"
+                        : message["coordinates"]["latitude"] + "," +
+                            message["coordinates"]["longitude"];
+
+                    if (message["has_attachment"] != null)
+                        body = message["attachments"].Aggregate(body, (current, attachment) => current + attachment["attach_type"].ToString());
+
+                    // TODO: JSONify
+                    msgs.Add(new Message(date, author, body.ToString(), source, location));
                 }
 
+                if (messages.Count < MessageLimit)
+                    break;
+
+                offset += MessageLimit;
+            }
+
+            File.WriteAllLines(convoName + ".txt", msgs.Select(msg => msg.ToString()));
             Stuff.SortByTime(convoName);
             return string.Format("Got {0} messages with {1}", numMessages, convoName);
         }

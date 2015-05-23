@@ -13,6 +13,10 @@
         
         <TextBlock Name="FrequenciesBlock" Margin="10,0"/>
         
-        <Button Name="OpenFileButton" Content="Open File" Width="70" Height="30" Click="OpenFileButton_OnClick" HorizontalAlignment="Right" Margin="10, 10"/>
+        <StackPanel Orientation="Horizontal" Margin="0">
+            <Button Name="PlotButton" Content="Plot" Click="OpenPlotWindow"/>
+            <Button Name="OpenFileButton" Content="Open File" Width="70" Height="30" Click="OpenFileButton_OnClick" HorizontalAlignment="Right" Margin="10, 10"/>
+        </StackPanel>
+        
     </StackPanel>
 </Window>

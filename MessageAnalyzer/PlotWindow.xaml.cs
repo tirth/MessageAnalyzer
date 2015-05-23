@@ -18,12 +18,30 @@ namespace MessageAnalyzer
 {
     public partial class PlotWindow : Window
     {
-        public PlotModel MyModel { get; private set; }
+        public PlotModel Model { get; private set; }
 
         public PlotWindow()
         {
-            MyModel = new PlotModel {Title = "Test"};
-            MyModel.Series.Add(new FunctionSeries(Math.Cos, 0, 10, 0.1, "cos(x)"));
+            var temp = new PlotModel() {Title = "Example", Subtitle = "Test"};
+
+            var series1 = new LineSeries() {Title = "Series 1", MarkerType = MarkerType.Diamond};
+            series1.Points.Add(new DataPoint(0, 0));
+            series1.Points.Add(new DataPoint(10, 18));
+            series1.Points.Add(new DataPoint(20, 12));
+            series1.Points.Add(new DataPoint(30, 8));
+            series1.Points.Add(new DataPoint(40, 15));
+
+            var series2 = new LineSeries { Title = "Series 2", MarkerType = MarkerType.Square };
+            series2.Points.Add(new DataPoint(0, 4));
+            series2.Points.Add(new DataPoint(10, 12));
+            series2.Points.Add(new DataPoint(20, 16));
+            series2.Points.Add(new DataPoint(30, 25));
+            series2.Points.Add(new DataPoint(40, 5));
+
+            temp.Series.Add(series1);
+            temp.Series.Add(series2);
+
+            Model = temp;
         }
     }
 }

@@ -6,7 +6,7 @@
     <StackPanel>
         <TextBlock HorizontalAlignment="Center" Margin="0, 10, 0, 0" Text="Services" FontSize="22" FontWeight="Light"/>
         <Button Name="FbButton" Height="50" Margin="0, 10, 0, 0" Content="FB" Click="FbButton_OnClick"/>
-        <Button Name="WaButton" Height="50" Margin="0, 10, 0, 0" Content="WhatsApp" Click="WaButton_OnClick" IsEnabled="False"/>
+        <Button Name="WaButton" Height="50" Margin="0, 10, 0, 0" Content="WhatsApp" Click="WaButton_OnClick"/>
         <Button Name="SmsButton" Height="50" Margin="0, 10, 0, 0" Content="SMS" Click="SmsButton_OnClick" IsEnabled="False"/>
         <Separator Margin="0, 15, 0, 10"></Separator>
         <TextBlock HorizontalAlignment="Center" Text="Analysis" FontSize="22" FontWeight="Light"/>

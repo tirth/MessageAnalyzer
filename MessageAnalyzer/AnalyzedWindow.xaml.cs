@@ -30,5 +30,10 @@ namespace MessageAnalyzer
         {
             Process.Start(_convoName + ".xlsx");
         }
+
+        private void OpenPlotWindow(object sender, RoutedEventArgs e)
+        {
+            new PlotWindow() {Owner = this}.Show();
+        }
     }
 }
