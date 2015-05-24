@@ -287,7 +287,7 @@ namespace MessageAnalyzer
             return new Tuple<Dictionary<string, string>, Dictionary<string, string>>(friends, threads);
         }
 
-        private static async Task<string> GetMessages(HttpClient client, string accessToken, string myId, string convoId,
+        private async Task<string> GetMessages(HttpClient client, string accessToken, string myId, string convoId,
             string convoName, bool isGroup)
         {
             var offset = 0;
@@ -304,7 +304,7 @@ namespace MessageAnalyzer
                 foreach (var message in messages)
                 {
                     var date = (message["timestamp"].ToString());
-                    var source = string.Join(" ", message["source_tags"]).Contains("mobile") ? "mobile" : "web";
+                    var source = string.Join(" ", message["source_tags"]).Contains("mobile") ? "FB mobile" : "FB web";
 
                     var authorId = message["author"].ToString().Split(':')[1];
                     string author;
@@ -320,7 +320,7 @@ namespace MessageAnalyzer
                     }
 
                     var body = message["body"] ?? message["log_message_body"];
-                    body = body.ToString().Replace('\n', ' ');
+                    body = body.ToString();
 
                     var location = message["coordinates"].ToString() == ""
                         ? "No location"
@@ -337,6 +337,7 @@ namespace MessageAnalyzer
                 if (messages.Count < MessageLimit)
                     break;
 
+                StatusBlock.Text = numMessages + " so far, getting more...";
                 offset += MessageLimit;
             }
 

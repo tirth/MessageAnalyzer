@@ -2,20 +2,33 @@
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Windows;
 using Microsoft.Win32;
 
 namespace MessageAnalyzer
 {
+    internal enum ConvoTypes
+    {
+        Person,
+        Group
+    };
+
     class Contact
     {
         public string Name { get; set; }
-        public string Type { get; set; }
+        public ConvoTypes Type { get; set; }
 
-        public Contact(string name, string type)
+        public Contact(string name, ConvoTypes type)
         {
             Name = name;
             Type = type;
+        }
+
+        public bool IsPerson()
+        {
+            return Type == ConvoTypes.Person;
         }
 
         public override string ToString()
@@ -24,18 +37,36 @@ namespace MessageAnalyzer
         }
     }
 
+    class Thread
+    {
+        public string Name { get; set; }
+        public List<Message> Messages { get; set; }
+
+        public Thread(string name)
+        {
+            Name = name;
+            Messages = new List<Message>();
+        }
+
+        public void AddMessage(Message msg)
+        {
+            Messages.Add(msg);
+        }
+    }
+
     public partial class WhatsAppDialogBox
     {
         private string _wa;
         private string _msgStore;
-        private List<string> _contactList;
-        private Dictionary<string, Contact> _phoneBook; 
+        private readonly Dictionary<string, Contact> _phoneBook;
+        private readonly Dictionary<string, Thread> _threads; 
 
         public WhatsAppDialogBox()
         {
             InitializeComponent();
-            _contactList = new List<string>();
-            _phoneBook = new Dictionary<string, Contact>();
+
+            _phoneBook = new Dictionary<string, Contact> {["me"] = new Contact("me", ConvoTypes.Person)};
+            _threads = new Dictionary<string, Thread>();
         }
 
         private void SelectWaDb(object sender, RoutedEventArgs e)
@@ -61,7 +92,7 @@ namespace MessageAnalyzer
             WaSelectButton.Visibility = Visibility.Collapsed;
 
             if (_wa != null && _msgStore != null)
-                OkButton.Visibility = Visibility.Visible;
+                SubmitPanel.Visibility = Visibility.Visible;
         }
 
         private void SelectMsgStoreDb(object sender, RoutedEventArgs e)
@@ -87,17 +118,30 @@ namespace MessageAnalyzer
             MsgStoreSelectButton.Visibility = Visibility.Collapsed;
 
             if (_wa != null && _msgStore != null)
-                OkButton.Visibility = Visibility.Visible;
+                SubmitPanel.Visibility = Visibility.Visible;
         }
 
         private void OkButton_OnClick(object sender, RoutedEventArgs e)
         {
-            ReadContacts();
+            if (OkButton.Content.ToString() == "OK")
+            {
+                ReadContacts();
+                DataCollectionPanel.Visibility = Visibility.Collapsed;
+                ContactSelectionPanel.Visibility = Visibility.Visible;
 
-            foreach (var contact in _phoneBook)
-                Trace.WriteLine(contact);
+                ExtractMessages();
 
-            ExtractMessages();
+                ContactSelectionBox.ItemsSource = _threads.Keys;
+                ContactSelectionBox.SelectedIndex = 0;
+
+                OkButton.Content = "Punch it!";
+            }
+            else
+            {
+                var selected = ContactSelectionBox.SelectedItem.ToString();
+                File.WriteAllLines(selected + ".txt", _threads[selected].Messages.Select(msg => msg.ToString()));
+                StatusBlock.Text = "Saved " + selected + ".txt";
+            }
         }
 
         private async void ReadContacts()
@@ -107,27 +151,28 @@ namespace MessageAnalyzer
 
             var command = new SQLiteCommand("SELECT jid, display_name FROM wa_contacts", conn);
             var reader = await command.ExecuteReaderAsync().ConfigureAwait(false);
-            
+
             while (await reader.ReadAsync())
             {
                 var sender = reader["jid"].ToString().Split('@');
                 var name = reader["display_name"].ToString();
 
-                _phoneBook[sender[0]] = 
-                    sender[1] == "g.us" ? new Contact(name, "group") : new Contact(name, "person");
+                if (name == "")
+                    continue;  // no longer a contact
 
-                _contactList.Add(name);
+                _phoneBook[sender[0]] = sender[1] == "g.us" 
+                    ? new Contact(name, ConvoTypes.Group) 
+                    : new Contact(name, ConvoTypes.Person);
             }
 
+            command.Dispose();
             conn.Close();
         }
 
-        private async void ExtractMessages(string choice = null)
+        private async void ExtractMessages()
         {
             var conn = new SQLiteConnection("Data Source=" + _msgStore);
             conn.Open();
-
-            var msgs = new List<Message>();
 
             var command = new SQLiteCommand(
                     "SELECT timestamp, key_from_me, key_remote_jid, remote_resource, data, media_mime_type " +
@@ -140,41 +185,63 @@ namespace MessageAnalyzer
                 var ts = reader["timestamp"].ToString();
                 var fromMe = Convert.ToBoolean(reader["key_from_me"]);
                 var jId = reader["key_remote_jid"];
-                var group = reader["remote_resource"];
-                var message = reader["data"];
-                var media = reader["media_mime_type"];
+                var group = reader["remote_resource"].ToString();
+                var message = reader["data"].ToString();
+                var media = reader["media_mime_type"].ToString();
 
-                // figure out sender
-                string sender;
+                // figure out sender and receiver
+                Contact sender;
+                Contact receiver;
                 var converser = jId.ToString().Split('@')[0];
 
-                if (fromMe)
+                try
                 {
-                    if (group != null)
-                        continue;  // renamed conversation
-                    sender = "me@" + converser;
+                    if (fromMe)
+                    {
+                        if (group != "")  // meta records
+                            continue;  
+
+                        sender = _phoneBook["me"];
+                        receiver = _phoneBook[converser];
+                    }
+                    else if (group == "")  // single chat
+                    {
+                        sender = _phoneBook[converser]; 
+                        receiver = _phoneBook["me"];
+                    }
+                    else  // group chat
+                    {
+                        sender = _phoneBook[group.Split('@')[0]]; 
+                        receiver = _phoneBook[converser];
+                    }
                 }
-                else if (group == null || group.ToString() == "")
-                    sender = converser + "@me"; // single chat
-                else
-                    sender = group.ToString().Split('@')[0] + "@" + converser; // group chat
+                catch (KeyNotFoundException)
+                {
+                    Trace.WriteLine(message);
+                    continue;  // unknown contact
+                }
 
                 // figure out body
                 string body;
 
-                if (message != null)
-                    body = message.ToString();
-                else if (media != null)
-                    body = media.ToString();
+                if (message != "")
+                    body = message;
+                else if (media != "")
+                    body = media;
                 else
                     continue; // calls and images
 
-                if (choice != null)
-                {
+                // figure out thread
+                var thread = receiver.Type == ConvoTypes.Group || sender.Name == "me" 
+                    ? receiver.Name : sender.Name;
 
-                }
+                if (!_threads.ContainsKey(thread))
+                    _threads[thread] = new Thread(thread);
+
+                _threads[thread].AddMessage(new Message(ts, sender.Name, body, "WhatsApp"));
             }
 
+            command.Dispose();
             conn.Close();
         }
     }

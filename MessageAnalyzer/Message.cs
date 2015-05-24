@@ -16,14 +16,14 @@
         {
             Timestamp = timestamp;
             Author = author;
-            Body = body;
-            Source = source;
-            Location = location;
+            Body = body.Replace('\n', ' ');
+            Source = source ?? "";
+            Location = location ?? "";
         }
 
         public override string ToString()
         {
-            return string.Join(Stuff.Sepr.ToString(), Timestamp, Author, Body, Source ?? "", Location ?? "");
+            return string.Join(Stuff.Sepr.ToString(), Timestamp, Author, Body, Source, Location);
         }
     }
 }

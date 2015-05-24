@@ -8,20 +8,30 @@
         Title="WhatsApp" SizeToContent="WidthAndHeight" MinWidth="300"
         ResizeMode="NoResize" ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
     <StackPanel>
-        <TextBlock Text="WhatsApp Contact Database" FontWeight="Light" Margin="10, 0, 10, 0" FontSize="18"/>
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-            <Button Name="WaSelectButton" Content="Select wa.db" Margin="10" HorizontalAlignment="Left" Click="SelectWaDb"/>    
-            <TextBlock Name="WaBlock" Margin="10" FontStyle="Italic" Visibility="Collapsed"/>
-        </StackPanel>
+        <StackPanel Name="DataCollectionPanel">
+            <TextBlock Text="WhatsApp Contact Database" FontWeight="Light" Margin="10, 0, 10, 0" FontSize="18"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Button Name="WaSelectButton" Content="Select wa.db" Margin="10" HorizontalAlignment="Left" Click="SelectWaDb"/>
+                <TextBlock Name="WaBlock" Margin="10" FontStyle="Italic" Visibility="Collapsed"/>
+            </StackPanel>
 
-        <TextBlock Text="WhatsApp Message Database" FontWeight="Light" Margin="10, 0, 10, 0" FontSize="18"/>
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-            <Button Name="MsgStoreSelectButton" Content="Select msgstore.db" Margin="10" HorizontalAlignment="Left" Click="SelectMsgStoreDb"/>
-            <TextBlock Name="MsgStoreBlock" Margin="10" FontStyle="Italic" Visibility="Collapsed"/>
+            <TextBlock Text="WhatsApp Message Database" FontWeight="Light" Margin="10, 0, 10, 0" FontSize="18"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Button Name="MsgStoreSelectButton" Content="Select msgstore.db" Margin="10" HorizontalAlignment="Left" Click="SelectMsgStoreDb"/>
+                <TextBlock Name="MsgStoreBlock" Margin="10" FontStyle="Italic" Visibility="Collapsed"/>
+            </StackPanel>
         </StackPanel>
-
         
-        <Button x:Name="OkButton" Margin="0, 10, 15, 10" Content="Punch it!" HorizontalAlignment="Right" IsDefault="True" Width="100" FontWeight="Bold" 
-                Visibility="Collapsed" Click="OkButton_OnClick"/>
+        <StackPanel Name="ContactSelectionPanel" Visibility="Collapsed">
+            <TextBlock Text="Select a conversation" FontWeight="Light" Margin="10, 5, 10, 0" FontSize="18"/>
+            <ComboBox Name="ContactSelectionBox" Margin="10"/>
+        </StackPanel>
+        
+        <StackPanel Name="SubmitPanel" Orientation="Horizontal" HorizontalAlignment="Right" Visibility="Collapsed">
+            <TextBlock x:Name="StatusBlock" VerticalAlignment="Center" Margin="0, 0, 30, 0" HorizontalAlignment="Left" FontWeight="Bold" Foreground="Red"/>
+            <Button x:Name="OkButton" Margin="0, 10, 15, 10" Content="OK" HorizontalAlignment="Right" IsDefault="True" Width="100" FontWeight="Bold" 
+                Click="OkButton_OnClick"/>
+        </StackPanel>
+        
     </StackPanel>
 </Window>
