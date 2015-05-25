@@ -6,54 +6,10 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using Microsoft.Win32;
+using Newtonsoft.Json;
 
 namespace MessageAnalyzer
 {
-    internal enum ConvoTypes
-    {
-        Person,
-        Group
-    };
-
-    class Contact
-    {
-        public string Name { get; set; }
-        public ConvoTypes Type { get; set; }
-
-        public Contact(string name, ConvoTypes type)
-        {
-            Name = name;
-            Type = type;
-        }
-
-        public bool IsPerson()
-        {
-            return Type == ConvoTypes.Person;
-        }
-
-        public override string ToString()
-        {
-            return Name;
-        }
-    }
-
-    class Thread
-    {
-        public string Name { get; set; }
-        public List<Message> Messages { get; set; }
-
-        public Thread(string name)
-        {
-            Name = name;
-            Messages = new List<Message>();
-        }
-
-        public void AddMessage(Message msg)
-        {
-            Messages.Add(msg);
-        }
-    }
-
     public partial class WhatsAppDialogBox
     {
         private string _wa;
@@ -65,7 +21,7 @@ namespace MessageAnalyzer
         {
             InitializeComponent();
 
-            _phoneBook = new Dictionary<string, Contact> {["me"] = new Contact("me", ConvoTypes.Person)};
+            _phoneBook = new Dictionary<string, Contact> {["me"] = new Contact("me")};
             _threads = new Dictionary<string, Thread>();
         }
 
@@ -141,6 +97,9 @@ namespace MessageAnalyzer
                 var selected = ContactSelectionBox.SelectedItem.ToString();
                 File.WriteAllLines(selected + ".txt", _threads[selected].Messages.Select(msg => msg.ToString()));
                 StatusBlock.Text = "Saved " + selected + ".txt";
+
+                //JSON
+                File.WriteAllText(selected + ".json", JsonConvert.SerializeObject(_threads[selected]));
             }
         }
 
@@ -162,7 +121,7 @@ namespace MessageAnalyzer
 
                 _phoneBook[sender[0]] = sender[1] == "g.us" 
                     ? new Contact(name, ConvoTypes.Group) 
-                    : new Contact(name, ConvoTypes.Person);
+                    : new Contact(name);
             }
 
             command.Dispose();
@@ -238,7 +197,7 @@ namespace MessageAnalyzer
                 if (!_threads.ContainsKey(thread))
                     _threads[thread] = new Thread(thread);
 
-                _threads[thread].AddMessage(new Message(ts, sender.Name, body, "WhatsApp"));
+                _threads[thread].AddMessage(new Message(ts, sender, body, "WhatsApp"));
             }
 
             command.Dispose();

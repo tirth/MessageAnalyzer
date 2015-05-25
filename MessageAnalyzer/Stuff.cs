@@ -22,6 +22,11 @@ namespace MessageAnalyzer
             File.WriteAllLines(convoName + @".txt", messages);
         }
 
+        public static void MergeConversations(params string[] convos)
+        {
+            
+        }
+
         public static Tuple<Dictionary<string, Dictionary<string, int>>, Dictionary<string, int>> ConvoFrequencyByDate(
             string convoName, bool graph = false, bool byLen = true, int[] fromDate = null, int[] toDate = null)
         {

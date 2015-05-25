@@ -6,7 +6,8 @@
         xmlns:local="clr-namespace:MessageAnalyzer"
         mc:Ignorable="d"
         Title="WhatsApp" SizeToContent="WidthAndHeight" MinWidth="300"
-        ResizeMode="NoResize" ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
+        ResizeMode="NoResize" ShowInTaskbar="False" WindowStartupLocation="CenterOwner"
+        Icon="whatsapp.png">
     <StackPanel>
         <StackPanel Name="DataCollectionPanel">
             <TextBlock Text="WhatsApp Contact Database" FontWeight="Light" Margin="10, 0, 10, 0" FontSize="18"/>
@@ -28,7 +29,7 @@
         </StackPanel>
         
         <StackPanel Name="SubmitPanel" Orientation="Horizontal" HorizontalAlignment="Right" Visibility="Collapsed">
-            <TextBlock x:Name="StatusBlock" VerticalAlignment="Center" Margin="0, 0, 30, 0" HorizontalAlignment="Left" FontWeight="Bold" Foreground="Red"/>
+            <TextBlock x:Name="StatusBlock" VerticalAlignment="Center" Margin="0, 0, 20, 0" HorizontalAlignment="Left" FontWeight="Bold" Foreground="Red"/>
             <Button x:Name="OkButton" Margin="0, 10, 15, 10" Content="OK" HorizontalAlignment="Right" IsDefault="True" Width="100" FontWeight="Bold" 
                 Click="OkButton_OnClick"/>
         </StackPanel>

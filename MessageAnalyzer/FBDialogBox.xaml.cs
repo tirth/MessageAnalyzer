@@ -10,6 +10,8 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace MessageAnalyzer
@@ -23,7 +25,7 @@ namespace MessageAnalyzer
         static HttpClient _client;
         private static string _accessToken;
         private static string _myId;
-        private static Dictionary<string, string> _authors;
+        private static Dictionary<string, Contact> _authors;
 
         private static Dictionary<string, string> _recentGroupThreads;
         private static Dictionary<string, string> _recentFriendThreads;
@@ -36,7 +38,7 @@ namespace MessageAnalyzer
             _client = new HttpClient(new HttpClientHandler { CookieContainer = new CookieContainer() }) { BaseAddress = BaseAddress };
             _client.DefaultRequestHeaders.Add("user-agent", "NCSA_Mosaic/2.0 (Windows 3.1)");
 
-            _authors = new Dictionary<string, string>();
+            _authors = new Dictionary<string, Contact>();
             _recentFriendThreads = new Dictionary<string, string>();
             _recentGroupThreads = new Dictionary<string, string>();
         }
@@ -81,41 +83,43 @@ namespace MessageAnalyzer
                     PasswordEntry.IsEnabled = true;
                     OkButton.IsEnabled = true;
                 }
-                else
-                {
-                    StatusBlock.Text = "Getting recent messages...";
-                    OkButton.IsEnabled = true;
-                    OkButton.Visibility = Visibility.Hidden;
-
-                    // switch screens
-                    AccountStackPanel.Visibility = Visibility.Collapsed;
-                    OkButton.Content = "Punch it!";
-
-                    // populate recent messages
-                    var recents = await GetRecentMessages(_client);
-
-                    OkButton.Visibility = Visibility.Visible;
-                    DetailsStackPanel.Visibility = Visibility.Visible;
-                    StatusBlock.Text = "Done!";
-
-                    _authors = recents.Item1;
-                    _authors[_myId] = "me";
-
-                    var recentThreads = recents.Item2;
-
-                    // separate threads
-                    foreach (var thread in recentThreads)
-                        if (_authors.ContainsKey(thread.Value))
-                            _recentFriendThreads.Add(thread.Key, thread.Value);
-                        else
-                            _recentGroupThreads.Add(thread.Key, thread.Value);
-
-                    RecentsPicker.ItemsSource = _recentFriendThreads.Keys;
-                    RecentsPicker.SelectedIndex = 0;
-
-                    selected_recent(null, null);
-                }
+                else LoggedIn();
             }
+        }
+
+        private async void LoggedIn()
+        {
+            StatusBlock.Text = "Getting recent messages...";
+            OkButton.IsEnabled = true;
+            OkButton.Visibility = Visibility.Hidden;
+
+            // switch screens
+            AccountStackPanel.Visibility = Visibility.Collapsed;
+            OkButton.Content = "Punch it!";
+
+            // populate recent messages
+            var recents = await GetRecentMessages(_client);
+
+            OkButton.Visibility = Visibility.Visible;
+            DetailsStackPanel.Visibility = Visibility.Visible;
+            StatusBlock.Text = "Done!";
+
+            _authors = recents.Item1;
+            _authors[_myId] = new Contact("me");
+
+            var recentThreads = recents.Item2;
+
+            // separate threads
+            foreach (var thread in recentThreads)
+                if (_authors.ContainsKey(thread.Value))
+                    _recentFriendThreads.Add(thread.Key, thread.Value);
+                else
+                    _recentGroupThreads.Add(thread.Key, thread.Value);
+
+            RecentsPicker.ItemsSource = _recentFriendThreads.Keys;
+            RecentsPicker.SelectedIndex = 0;
+
+            selected_recent(null, null);
         }
 
         private void selected_recent(object sender, RoutedEventArgs e)
@@ -148,12 +152,12 @@ namespace MessageAnalyzer
             else
                 try
                 {
-                    convoName = _authors[convoId];
+                    convoName = _authors[convoId].Name;
                 }
                 catch (KeyNotFoundException)
                 {
                     convoName = await FriendNameFromFbId(convoId, _client);
-                    _authors.Add(convoId, convoName);
+                    _authors.Add(convoId, new Contact(convoName));
                 }
 
             StatusBlock.Text = "Getting convos with " + convoName + "...";
@@ -248,11 +252,11 @@ namespace MessageAnalyzer
         }
 
         // friend dictionary <ID, Name>; thread dictionary <Name, ID>
-        private async static Task<Tuple<Dictionary<string, string>, Dictionary<string, string>>> GetRecentMessages(HttpClient client)
+        private async static Task<Tuple<Dictionary<string, Contact>, Dictionary<string, string>>> GetRecentMessages(HttpClient client)
         {
             var messagePage = await client.GetStringAsync(BaseAddress + "messages");
 
-            var friends = new Dictionary<string, string>();
+            var friends = new Dictionary<string, Contact>();
             var threads = new Dictionary<string, string>();
 
             // pull out friends
@@ -262,7 +266,7 @@ namespace MessageAnalyzer
 
             // populate friend dictionary
             foreach (var friend in friendsJson["participants"])
-                friends[friend["fbid"].Value<string>()] = friend["name"].Value<string>();
+                friends[friend["fbid"].Value<string>()] = new Contact(friend["name"].Value<string>());
 
             // pull out threads
             const string threadSearch = @"{""threads"":(.+)""ordered_threadlists";
@@ -277,14 +281,14 @@ namespace MessageAnalyzer
 
                 if (threadName == "")
                     threadName = thread["participants"].ToList().Count > 2
-                        ? thread["participants"].Aggregate(threadName, (current, person) => current + (friends[person.ToString().Split(':')[1]] + "|"))
-                        : friends[threadId];
+                        ? thread["participants"].Aggregate(threadName, (current, person) => current + (friends[person.ToString().Split(':')[1]].Name + "|"))
+                        : friends[threadId].Name;
 
                 threads[threadName] = threadId;
                 Trace.WriteLine(threadName + " " + thread["message_count"]);
             }
 
-            return new Tuple<Dictionary<string, string>, Dictionary<string, string>>(friends, threads);
+            return new Tuple<Dictionary<string, Contact>, Dictionary<string, string>>(friends, threads);
         }
 
         private async Task<string> GetMessages(HttpClient client, string accessToken, string myId, string convoId,
@@ -292,7 +296,7 @@ namespace MessageAnalyzer
         {
             var offset = 0;
             var numMessages = 0;
-            var msgs = new List<Message>();
+            var thread = new Thread(convoName);
 
             while (true)
             {
@@ -307,7 +311,7 @@ namespace MessageAnalyzer
                     var source = string.Join(" ", message["source_tags"]).Contains("mobile") ? "FB mobile" : "FB web";
 
                     var authorId = message["author"].ToString().Split(':')[1];
-                    string author;
+                    Contact author;
 
                     try
                     {
@@ -315,7 +319,7 @@ namespace MessageAnalyzer
                     }
                     catch (KeyNotFoundException)
                     {
-                        author = await FriendNameFromFbId(authorId, client).ConfigureAwait(false);
+                        author = new Contact(await FriendNameFromFbId(authorId, client).ConfigureAwait(false));
                         _authors.Add(authorId, author);
                     }
 
@@ -330,19 +334,26 @@ namespace MessageAnalyzer
                     if (message["has_attachment"] != null)
                         body = message["attachments"].Aggregate(body, (current, attachment) => current + attachment["attach_type"].ToString());
 
-                    // TODO: JSONify
-                    msgs.Add(new Message(date, author, body.ToString(), source, location));
+                    thread.AddMessage(new Message(date, author, body.ToString(), source, location));
                 }
 
                 if (messages.Count < MessageLimit)
                     break;
 
-                StatusBlock.Text = numMessages + " so far, getting more...";
+                Dispatcher.Invoke(() =>
+                StatusBlock.Text = numMessages + " so far, getting more...", DispatcherPriority.ContextIdle);
+
                 offset += MessageLimit;
             }
 
-            File.WriteAllLines(convoName + ".txt", msgs.Select(msg => msg.ToString()));
+            // JSON
+            thread.SortByTime();
+            File.WriteAllText(convoName + ".json", JsonConvert.SerializeObject(thread));
+
+            // txt
+            File.WriteAllLines(convoName + ".txt", thread.Messages.Select(msg => msg.ToString()));
             Stuff.SortByTime(convoName);
+
             return string.Format("Got {0} messages with {1}", numMessages, convoName);
         }
 
