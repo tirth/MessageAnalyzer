@@ -157,7 +157,7 @@ namespace MessageAnalyzer
                 {
                     if (fromMe)
                     {
-                        if (group != "")  // meta records
+                        if (!string.IsNullOrEmpty(group))  // meta records
                             continue;  
 
                         sender = _phoneBook["me"];
@@ -183,9 +183,9 @@ namespace MessageAnalyzer
                 // figure out body
                 string body;
 
-                if (message != "")
+                if (!string.IsNullOrEmpty(message))
                     body = message;
-                else if (media != "")
+                else if (!string.IsNullOrEmpty(media))
                     body = media;
                 else
                     continue; // calls and images

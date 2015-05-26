@@ -22,12 +22,47 @@ namespace MessageAnalyzer
             File.WriteAllLines(convoName + @".txt", messages);
         }
 
-        public static void MergeConversations(params string[] convos)
+        public static Thread MergeConversations(params Thread[] convos)
         {
-            
+            var totalSize = 0;
+            var threadIterators = new Dictionary<string, IEnumerator<Message>>(2);
+
+            var mergedName = "";
+
+            foreach (var thread in convos)
+            {
+                var iterator = thread.GetEnumerator();
+                if (iterator.MoveNext())  // has elements to enumerate
+                    threadIterators[thread.Name] = iterator;
+
+                totalSize += thread.Size;
+                mergedName += thread.Name;
+            }
+
+            var mergedThread = new Thread(mergedName);
+            while (mergedThread.Size < totalSize)
+            {
+                var oldestMessage = new KeyValuePair<string, IEnumerator<Message>>();
+                var oldestTimestamp = long.MaxValue;
+
+                foreach (var iterator in threadIterators)
+                    if (iterator.Value.Current.Timestamp < oldestTimestamp)
+                    {
+                        oldestTimestamp = iterator.Value.Current.Timestamp;
+                        oldestMessage = iterator;
+                    }
+
+                mergedThread.AddMessage(oldestMessage.Value.Current);
+
+                // exhausted current thread
+                if (!threadIterators[oldestMessage.Key].MoveNext())
+                    threadIterators.Remove(oldestMessage.Key);
+            }
+
+            return mergedThread;
         }
 
-        public static Tuple<Dictionary<string, Dictionary<string, int>>, Dictionary<string, int>> ConvoFrequencyByDate(
+        public static Tuple<Dictionary<string, Dictionary<string, int>>, Dictionary<string, int>> ConvoFrequencyByDateFromTxt(
             string convoName, bool graph = false, bool byLen = true, int[] fromDate = null, int[] toDate = null)
         {
             var messages = File.ReadAllLines(convoName + @".txt");
@@ -85,7 +120,7 @@ namespace MessageAnalyzer
                     Convert.ToInt32(last[1]), Convert.ToInt32(last[2]));
             }
 
-            var uno = new TimeSpan(1, 0, 0, 0);
+            var oneDay = new TimeSpan(1, 0, 0, 0);
             var totalDays = (lastDay - firstDay).Days;
 
             // go through all elapsed days, filling in data if present
@@ -94,7 +129,7 @@ namespace MessageAnalyzer
             {
                 var date = currentDay.ToString("u").Split(' ')[0];
                 fullFreq[date] = freq.ContainsKey(date) ? freq[date] : new Dictionary<string, int>();
-                currentDay += uno;
+                currentDay += oneDay;
             }
 
             // fill in zeros
@@ -113,7 +148,7 @@ namespace MessageAnalyzer
         {
             people.Sort();
 
-            var chartData = new Dictionary<string, ArrayList> {["day"] = new ArrayList(freq.Keys.Count)};
+            var chartData = new Dictionary<string, ArrayList> {["day"] = new ArrayList(freq.Keys.Count) };
 
             // prepare data dictionary
             foreach (var person in people)
@@ -162,8 +197,8 @@ namespace MessageAnalyzer
                 // assign series
                 var dataLength = (chartData["day"].Count + 1).ToString();
                 for (var i = 66; i < people.Count + 66; i++)
-                    chart.Series.Add((char) i + "2:" + (char) i + dataLength, "A2:A" + dataLength)
-                        .HeaderAddress = worksheet.Cells[(char) i + "1"];
+                    chart.Series.Add((char)i + "2:" + (char)i + dataLength, "A2:A" + dataLength)
+                        .HeaderAddress = worksheet.Cells[(char)i + "1"];
 
                 // chart formatting
                 chart.SetSize(400);
@@ -172,7 +207,7 @@ namespace MessageAnalyzer
                 chart.YAxis.Title.Text = "Messages";
 
                 chart.Style = eChartStyle.Style4;
-                
+
                 package.Save();
             }
         }

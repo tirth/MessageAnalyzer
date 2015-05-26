@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
@@ -11,9 +12,9 @@ namespace MessageAnalyzer
         Group
     };
 
-    public class Message
+    public class Message : IComparable
     {
-        public string Timestamp { get; set; }
+        public long Timestamp { get; set; }
         public Contact Author { get; set; }
         public string Body { get; set; }
         public string Source { get; set; }
@@ -21,7 +22,7 @@ namespace MessageAnalyzer
 
         public Message(string timestamp, Contact author, string body, string source = null, string location = null)
         {
-            Timestamp = timestamp;
+            Timestamp = long.Parse(timestamp);
             Author = author;
             Body = body.Replace('\n', ' ');
             Source = source ?? "Unknown source";
@@ -35,8 +36,7 @@ namespace MessageAnalyzer
 
         public int CompareTo(object obj)
         {
-            // use DateTime instead?
-            return Int64.Parse(Timestamp).CompareTo(Int64.Parse(((Message)obj).Timestamp));
+            return Timestamp.CompareTo(((Message)obj).Timestamp);
         }
     }
 
@@ -62,11 +62,13 @@ namespace MessageAnalyzer
         }
     }
 
-    public class Thread
+    [JsonObject]
+    public class Thread : IEnumerable<Message>
     {
         public string Name { get; set; }
         public List<Message> Messages { get; set; }
-        public HashSet<Contact> Participants { get; set; } 
+        public HashSet<Contact> Participants { get; set; }
+        public int Size => Messages.Count;
 
         public Thread(string name)
         {
@@ -78,7 +80,9 @@ namespace MessageAnalyzer
         public void AddMessage(Message msg)
         {
             Messages.Add(msg);
-            AddParticipant(msg.Author);
+
+            if (!Participants.Contains(msg.Author))
+                Participants.Add(msg.Author);
         }
 
         public void AddParticipant(Contact participant)
@@ -93,7 +97,24 @@ namespace MessageAnalyzer
 
         public void Save(string fileName = null)
         {
-            File.WriteAllText(fileName ?? Name, JsonConvert.SerializeObject(this));
+            File.WriteAllText((fileName ?? Name) + ".json", JsonConvert.SerializeObject(this));
+        }
+
+        public async void SaveTxt(string fileName = null)
+        {
+            using (var writer = new StreamWriter((fileName ?? Name) + ".txt"))
+                foreach (var message in Messages)
+                    await writer.WriteLineAsync(message.ToString());
+        }
+
+        public IEnumerator<Message> GetEnumerator()
+        {
+            return Messages.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

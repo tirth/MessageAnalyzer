@@ -41,11 +41,11 @@ namespace MessageAnalyzer
                 var fromD = FromDate.SelectedDate.GetValueOrDefault();
                 var toD = ToDate.SelectedDate.GetValueOrDefault();
 
-                data = Stuff.ConvoFrequencyByDate(convoName, true, byLen,
+                data = Stuff.ConvoFrequencyByDateFromTxt(convoName, true, byLen,
                     new[] {fromD.Year, fromD.Month, fromD.Day}, new[] {toD.Year, toD.Month, toD.Day});
             }
             else
-                data = Stuff.ConvoFrequencyByDate(convoName, true, byLen);
+                data = Stuff.ConvoFrequencyByDateFromTxt(convoName, true, byLen);
 
             StatusBlock.Text = "Saved " + ConvoPicker.SelectedItem + ".xlsx";
 
