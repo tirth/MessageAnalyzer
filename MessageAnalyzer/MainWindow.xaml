@@ -1,20 +1,82 @@
-﻿<Window x:Class="MessageAnalyzer.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Message Analyzer" Width="270" SizeToContent="Height"
-        Icon="message.ico">
+﻿<Window
+    x:Class="MessageAnalyzer.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Message Analyzer"
+    Width="270"
+    SizeToContent="Height"
+    Icon="message.ico">
     <StackPanel>
-        <TextBlock HorizontalAlignment="Center" Margin="0, 10, 0, 0" Text="Services" FontSize="22" FontWeight="Light"/>
-        <Button Name="FbButton" Height="50" Margin="0, 10, 0, 0" Content="FB" Click="FbButton_OnClick"/>
-        <Button Name="WaButton" Height="50" Margin="0, 10, 0, 0" Content="WhatsApp" Click="WaButton_OnClick"/>
-        <Button Name="SmsButton" Height="50" Margin="0, 10, 0, 0" Content="SMS" Click="SmsButton_OnClick" IsEnabled="False"/>
-        <Separator Margin="0, 15, 0, 10"></Separator>
-        <TextBlock HorizontalAlignment="Center" Text="Utilities" FontSize="22" FontWeight="Light"/>
-        <Button Name="MergeButton" Height="50" Margin="0, 10, 0, 0" Content="Merge Conversations" IsEnabled="False"/>
-        <Separator Margin="0, 15, 0, 10"></Separator>
-        <TextBlock HorizontalAlignment="Center" Text="Analysis" FontSize="22" FontWeight="Light"/>
-        <Button Name="ConvFreqButton" Height="50" Margin="0, 10, 0, 0" Content="Conversation Frequency" Click="FreqButton_OnClick"/>
-        <Button Name="WordFreqButton" Height="50" Margin="0, 10, 0, 0" Content="Word Frequency" Click="WordFreqButton_OnClickFreqButton_OnClick" IsEnabled="False"/>
-        <TextBlock Name="StatusBlock" Margin="0,15,0,2" HorizontalAlignment="Center" Text="No warranties express or implied; do not feed after midnight." FontStyle="Italic" FontSize="9"/>
+        <TextBlock
+            HorizontalAlignment="Center"
+            Margin="0, 10, 0, 0"
+            Text="Services"
+            FontSize="22"
+            FontWeight="Light" />
+        <Button
+            Name="FbButton"
+            Height="50"
+            Margin="0, 10, 0, 0"
+            Content="FB"
+            Click="FbButton_OnClick" />
+        <Button
+            Name="WaButton"
+            Height="50"
+            Margin="0, 10, 0, 0"
+            Content="WhatsApp"
+            Click="WaButton_OnClick" />
+        <Button
+            Name="SmsButton"
+            Height="50"
+            Margin="0, 10, 0, 0"
+            Content="SMS"
+            Click="SmsButton_OnClick"
+            IsEnabled="False" />
+        <Separator
+            Margin="0, 15, 0, 10"></Separator>
+        <TextBlock
+            HorizontalAlignment="Center"
+            Text="Utilities"
+            FontSize="22"
+            FontWeight="Light" />
+        <Button
+            Name="MergeButton"
+            Height="50"
+            Margin="0, 10, 0, 0"
+            Content="Merge Conversations"
+            IsEnabled="False" />
+        <Button
+            Name="ViewButton"
+            Height="50"
+            Margin="0, 10, 0, 0"
+            Content="View Conversations"
+            Click="ViewButton_OnClick" />
+        <Separator
+            Margin="0, 15, 0, 10"></Separator>
+        <TextBlock
+            HorizontalAlignment="Center"
+            Text="Analysis"
+            FontSize="22"
+            FontWeight="Light" />
+        <Button
+            Name="ConvFreqButton"
+            Height="50"
+            Margin="0, 10, 0, 0"
+            Content="Conversation Frequency"
+            Click="FreqButton_OnClick" />
+        <Button
+            Name="WordFreqButton"
+            Height="50"
+            Margin="0, 10, 0, 0"
+            Content="Word Frequency"
+            Click="WordFreqButton_OnClick"
+            IsEnabled="False" />
+        <TextBlock
+            Name="StatusBlock"
+            Margin="0,15,0,2"
+            HorizontalAlignment="Center"
+            Text="No warranties express or implied; do not feed after midnight."
+            FontStyle="Italic"
+            FontSize="9" />
     </StackPanel>
 </Window>

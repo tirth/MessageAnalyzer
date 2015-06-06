@@ -12,7 +12,7 @@ namespace MessageAnalyzer
 
         private void FbButton_OnClick(object sender, RoutedEventArgs e)
         {
-            var dlg = new FbDialogBox { Owner = this };
+            var dlg = new FbDialogBox() { Owner = this };
 
             var result = dlg.ShowDialog();
 
@@ -40,9 +40,16 @@ namespace MessageAnalyzer
             //            StatusBlock.Text = result == true ? "Done." : "Nope.";
         }
 
-        private void WordFreqButton_OnClickFreqButton_OnClick(object sender, RoutedEventArgs e)
+        private void WordFreqButton_OnClick(object sender, RoutedEventArgs e)
         {
             var dlg = new UnderConstructionDialog() { Owner = this }.ShowDialog();
+        }
+
+        private void ViewButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            var dlg = new MessagesDisplayWindow() { Owner = this };
+
+            var result = dlg.ShowDialog();
         }
     }
 }
