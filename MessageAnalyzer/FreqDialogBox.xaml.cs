@@ -9,20 +9,19 @@ namespace MessageAnalyzer
 {
     public partial class FreqDialogBox
     {
+        private Thread _thread;
+
         public FreqDialogBox()
         {
             InitializeComponent();
 
-            var convoFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), @"*.txt");
+            var convoFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), @"*.json");
 
             // populate list of coversations
             var convos = new ArrayList();
-            foreach (var convoName in from convo in convoFiles
-                                      select convo.Split('\\')
-                                          into convoPath
-                                          select convoPath[convoPath.Length - 1]
-                                              into convoFile
-                                              select convoFile.Split('.')[0])
+            foreach (var convoName in convoFiles.Select(convo => convo.Split('\\'))
+                        .Select(convoPath => convoPath[convoPath.Length - 1])
+                        .Select(convoFile => convoFile.Split('.')[0]))
                 convos.Add(convoName);
 
             ConvoPicker.ItemsSource = convos;
@@ -31,25 +30,16 @@ namespace MessageAnalyzer
 
         private void AnalyzeClick(object sender, RoutedEventArgs e)
         {
-            Tuple<Dictionary<string, Dictionary<string, int>>, Dictionary<string, int>> data;
-            var convoName = ConvoPicker.SelectedItem.ToString();
-
             var byLen = ByLenRadio.IsChecked.GetValueOrDefault();
+            var fromDate = FromDatePicker.SelectedDate.GetValueOrDefault();
+            var toDate = ToDatePicker.SelectedDate.GetValueOrDefault();
 
             if (DateRangeRadio.IsChecked.GetValueOrDefault())
-            {
-                var fromD = FromDate.SelectedDate.GetValueOrDefault();
-                var toD = ToDate.SelectedDate.GetValueOrDefault();
-
-                data = Stuff.ConvoFrequencyByDateFromTxt(convoName, true, byLen,
-                    new[] {fromD.Year, fromD.Month, fromD.Day}, new[] {toD.Year, toD.Month, toD.Day});
-            }
+                new AnalyzedWindow(_thread, _thread.GenerateDailyFrequencies(fromDate, toDate, byLen)) { Owner = this }.Show();
+            else if (TimeOfDayRadio.IsChecked.GetValueOrDefault())
+                new AnalyzedWindow(_thread, _thread.GenerateHourlyFrequencies(byLen)) { Owner = this }.Show();
             else
-                data = Stuff.ConvoFrequencyByDateFromTxt(convoName, true, byLen);
-
-            StatusBlock.Text = "Saved " + ConvoPicker.SelectedItem + ".xlsx";
-
-            new AnalyzedWindow(convoName, data) {Owner = this}.Show();
+                new AnalyzedWindow(_thread, _thread.GenerateWeekdayFrequencies(byLen)) { Owner = this }.Show();
         }
 
         public void display_radio(object sender, RoutedEventArgs e)
@@ -59,16 +49,10 @@ namespace MessageAnalyzer
 
         public void convo_picked(object sender, RoutedEventArgs e)
         {
-            var messages = File.ReadAllLines(ConvoPicker.SelectedItem + ".txt");
+            _thread = Thread.LoadJson(ConvoPicker.SelectedItem.ToString());
 
-            var fromTs = Convert.ToInt64(messages[0].Split(Stuff.Sepr)[0]);
-            var fromD = DateTimeOffset.FromUnixTimeMilliseconds(fromTs).ToLocalTime().DateTime;
-
-            var toTs = Convert.ToInt64(messages[messages.Length - 1].Split(Stuff.Sepr)[0]);
-            var toD = DateTimeOffset.FromUnixTimeMilliseconds(toTs).ToLocalTime().DateTime;
-
-            FromDate.SelectedDate = fromD;
-            ToDate.SelectedDate = toD;
+            FromDatePicker.SelectedDate = _thread.Messages[0].Date.DateTime;
+            ToDatePicker.SelectedDate = _thread.Messages[_thread.Size - 1].Date.DateTime;
         }
     }
 }

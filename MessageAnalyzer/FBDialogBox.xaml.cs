@@ -22,7 +22,8 @@ namespace MessageAnalyzer
 
         private const int MessageLimit = 5000;
 
-        static HttpClient _client;
+        private static HttpClientHandler _handler;
+        private static HttpClient _client;
         private static string _accessToken;
         private static string _myId;
         private static Dictionary<string, Contact> _authors;
@@ -35,12 +36,15 @@ namespace MessageAnalyzer
             InitializeComponent();
 
             // to persist logged in session
-            _client = new HttpClient(new HttpClientHandler { CookieContainer = new CookieContainer() }) { BaseAddress = BaseAddress };
+            _handler = new HttpClientHandler() { CookieContainer = new CookieContainer() };
+            _client = new HttpClient(_handler) { BaseAddress = BaseAddress };
             _client.DefaultRequestHeaders.Add("user-agent", "NCSA_Mosaic/2.0 (Windows 3.1)");
 
             _authors = new Dictionary<string, Contact>();
             _recentFriendThreads = new Dictionary<string, string>();
             _recentGroupThreads = new Dictionary<string, string>();
+
+            Closed += FBDialogBox_Closed;
         }
 
         private void OkButton_OnClick(object sender, RoutedEventArgs e)
@@ -126,9 +130,11 @@ namespace MessageAnalyzer
         {
             StatusBlock.Text = "";
 
-            IdTextBox.Text = FriendRadioButton.IsChecked.GetValueOrDefault()
-                ? _recentFriendThreads[RecentsPicker.SelectedItem.ToString()]
-                 : _recentGroupThreads[RecentsPicker.SelectedItem.ToString()];
+            RecentsPicker.SelectedIndex = 0;
+
+            IdTextBox.Text = FriendRadioButton.IsChecked.GetValueOrDefault() ? 
+                _recentFriendThreads[RecentsPicker.SelectedItem.ToString()] : 
+                _recentGroupThreads[RecentsPicker.SelectedItem.ToString()];
         }
 
         private async void Message_Click()
@@ -247,8 +253,6 @@ namespace MessageAnalyzer
                     RecentsPicker.ItemsSource = _recentGroupThreads.Keys;
                     break;
             }
-
-            RecentsPicker.SelectedIndex = 0;
         }
 
         // friend dictionary <ID, Name>; thread dictionary <Name, ID>
@@ -373,6 +377,12 @@ namespace MessageAnalyzer
         private void id_focus(object sender, RoutedEventArgs e)
         {
             IdTextBox.Text = "";
+        }
+
+        static void FBDialogBox_Closed(object sender, EventArgs e)
+        {
+            _client.Dispose();
+            _handler.Dispose();
         }
     }
 

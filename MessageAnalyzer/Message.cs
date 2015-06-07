@@ -44,17 +44,17 @@ namespace MessageAnalyzer
         }
     }
 
-    public class Contact
+    public class Contact : IComparable
     {
-        public string Name { get; set; }
-        public List<string> Nicknames { get; set; } 
-        public ConvoTypes Type { get; set; }
+        public string Name { get; }
+        public List<string> Nicknames { get; set; }
+        public ConvoTypes Type { get; }
 
         public Contact(string name, ConvoTypes type = ConvoTypes.Person)
         {
             Name = name;
             Type = type;
-            Nicknames = new List<string> {Name};
+            Nicknames = new List<string> { Name };
         }
 
         public void AddNickname(string nickname)
@@ -72,6 +72,11 @@ namespace MessageAnalyzer
             return Name;
         }
 
+        public int CompareTo(object obj)
+        {
+            return string.Compare(Name, ((Contact)obj).Name, StringComparison.Ordinal);
+        }
+
         protected bool Equals(Contact other)
         {
             return string.Equals(Name, other.Name) && Type == other.Type;
@@ -81,14 +86,14 @@ namespace MessageAnalyzer
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            return obj.GetType() == GetType() && Equals((Contact) obj);
+            return obj.GetType() == GetType() && Equals((Contact)obj);
         }
 
         public override int GetHashCode()
         {
             unchecked
             {
-                return ((Name?.GetHashCode() ?? 0)*397) ^ (int) Type;
+                return ((Name?.GetHashCode() ?? 0) * 397) ^ (int)Type;
             }
         }
     }
@@ -130,7 +135,8 @@ namespace MessageAnalyzer
             return GenerateDailyFrequencies(Messages[0].Date, DateTimeOffset.Now.Date, byLen);
         }
 
-        public Dictionary<DateTimeOffset, Dictionary<Contact, int>> GenerateDailyFrequencies(DateTimeOffset fromDate, DateTimeOffset toDate, bool byLen = true)
+        public Dictionary<DateTimeOffset, Dictionary<Contact, int>> GenerateDailyFrequencies(DateTimeOffset fromDate, 
+            DateTimeOffset toDate, bool byLen = true)
         {
             var freqs = new Dictionary<DateTimeOffset, Dictionary<Contact, int>>();
 
@@ -174,7 +180,7 @@ namespace MessageAnalyzer
 
         public Dictionary<DayOfWeek, Dictionary<Contact, int>> GenerateWeekdayFrequencies(bool byLen = true)
         {
-            var freqs = new Dictionary<DayOfWeek, Dictionary<Contact, int>>()
+            var freqs = new Dictionary<DayOfWeek, Dictionary<Contact, int>>
             {
                 {DayOfWeek.Monday, new Dictionary<Contact, int>()},
                 {DayOfWeek.Tuesday, new Dictionary<Contact, int>()},

@@ -1,39 +1,41 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 
 namespace MessageAnalyzer
 {
     public partial class AnalyzedWindow
-    {
-        private Dictionary<string, Dictionary<string, int>> _frequencies;
-        private readonly string _convoName;
-         
-        public AnalyzedWindow(string convoName, Tuple<Dictionary<string, Dictionary<string, int>>, Dictionary<string, int>> data)
+    {        
+        public AnalyzedWindow(Thread thread, Dictionary<DateTimeOffset, Dictionary<Contact, int>> freqs)
         {
             InitializeComponent();
+            AnalzyedConvoName.Text = thread.Name;
 
-            _convoName = convoName;
-            AnalzyedConvoName.Text = convoName;
+            foreach (var person in (from entry in thread.Participants orderby entry.Value descending select entry))
+                FrequenciesBlock.Text += string.Format("{0,-10} {1,-5}\n", person.Value, person.Key);
+        }
 
-            _frequencies = data.Item1;
-            var people = data.Item2;
+        public AnalyzedWindow(Thread thread, Dictionary<int, Dictionary<Contact, int>> freqs)
+        {
+            InitializeComponent();
+            AnalzyedConvoName.Text = thread.Name;
+        }
 
-            foreach (var person in (from person in people orderby person.Value descending select person))
-                FrequenciesBlock.Text += String.Format("{0,-10} {1,-5}\n", person.Value, person.Key);
-            FrequenciesBlock.Text = FrequenciesBlock.Text.TrimEnd();
+        public AnalyzedWindow(Thread thread, Dictionary<DayOfWeek, Dictionary<Contact, int>> freqs)
+        {
+            InitializeComponent();
+            AnalzyedConvoName.Text = thread.Name;
         }
 
         private void OpenFileButton_OnClick(object sender, RoutedEventArgs e)
         {
-            Process.Start(_convoName + ".xlsx");
+//            Process.Start(_convoName + ".xlsx");
         }
 
         private void OpenPlotWindow(object sender, RoutedEventArgs e)
         {
-            new PlotWindow() {Owner = this}.Show();
+            new PlotWindow {Owner = this}.Show();
         }
     }
 }
