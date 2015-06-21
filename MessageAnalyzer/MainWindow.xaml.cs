@@ -21,7 +21,7 @@ namespace MessageAnalyzer
 
         private void WaButton_OnClick(object sender, RoutedEventArgs e)
         {
-            var dlg = new WhatsAppDialogBox() {Owner = this};
+            var dlg = new WhatsAppDialogBox() { Owner = this };
 
             var result = dlg.ShowDialog();
         }
@@ -42,7 +42,9 @@ namespace MessageAnalyzer
 
         private void WordFreqButton_OnClick(object sender, RoutedEventArgs e)
         {
-            var dlg = new UnderConstructionDialog() { Owner = this }.ShowDialog();
+            var dlg = new WordFreqDialogBox() { Owner = this };
+
+            var result = dlg.ShowDialog();
         }
 
         private void ViewButton_OnClick(object sender, RoutedEventArgs e)

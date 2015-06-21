@@ -69,8 +69,7 @@
             Height="50"
             Margin="0, 10, 0, 0"
             Content="Word Frequency"
-            Click="WordFreqButton_OnClick"
-            IsEnabled="False" />
+            Click="WordFreqButton_OnClick" />
         <TextBlock
             Name="StatusBlock"
             Margin="0,15,0,2"

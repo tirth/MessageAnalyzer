@@ -2,6 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
@@ -102,27 +104,29 @@ namespace MessageAnalyzer
     public class Thread : IEnumerable<Message>
     {
         public string Name { get; set; }
+        public HashSet<string> People { get; set; }
+
         public List<Message> Messages { get; }
         public int Size => Messages.Count;
-
-        [JsonIgnore]
-        public Dictionary<Contact, int> Participants { get; }
 
         public Thread(string name)
         {
             Name = name;
             Messages = new List<Message>();
-            Participants = new Dictionary<Contact, int>(2);
+            People = new HashSet<string>();
         }
 
         public void AddMessage(Message msg)
         {
             Messages.Add(msg);
+
+            if (!People.Contains(msg.Author.Name))
+                People.Add(msg.Author.Name);
         }
 
         public void AddParticipant(Contact participant)
         {
-            Participants.Add(participant, 0);
+            People.Add(participant.Name);
         }
 
         public void SortByTime()
@@ -130,20 +134,22 @@ namespace MessageAnalyzer
             Messages.Sort();
         }
 
-        public Dictionary<DateTimeOffset, Dictionary<Contact, int>> GenerateDailyFrequencies(bool byLen = true)
+        public Tuple<Dictionary<DateTimeOffset, Dictionary<Contact, int>>, Dictionary<Contact, int>> 
+            GenerateDailyFrequencies(bool byLen = true)
         {
             return GenerateDailyFrequencies(Messages[0].Date, DateTimeOffset.Now.Date, byLen);
         }
 
-        public Dictionary<DateTimeOffset, Dictionary<Contact, int>> GenerateDailyFrequencies(DateTimeOffset fromDate, 
-            DateTimeOffset toDate, bool byLen = true)
+        public Tuple<Dictionary<DateTimeOffset, Dictionary<Contact, int>>, Dictionary<Contact, int>>  
+            GenerateDailyFrequencies(DateTimeOffset fromDate, DateTimeOffset toDate, bool byLen = true)
         {
             var freqs = new Dictionary<DateTimeOffset, Dictionary<Contact, int>>();
+            var participants = new Dictionary<Contact, int>(2);
 
             foreach (var msg in Messages)
             {
-                if (!Participants.ContainsKey(msg.Author))
-                    AddParticipant(msg.Author);
+                if (!participants.ContainsKey(msg.Author))
+                    participants.Add(msg.Author, 0);
 
                 if (!freqs.ContainsKey(msg.Date))
                     freqs[msg.Date] = new Dictionary<Contact, int>();
@@ -152,7 +158,7 @@ namespace MessageAnalyzer
                     freqs[msg.Date][msg.Author] = 0;
 
                 freqs[msg.Date][msg.Author] += byLen ? msg.Length : 1;
-                Participants[msg.Author] += byLen ? msg.Length : 1;
+                participants[msg.Author] += byLen ? msg.Length : 1;
             }
 
             var totalDays = (toDate - fromDate).Days;
@@ -168,14 +174,15 @@ namespace MessageAnalyzer
                     ? freqs[currentDay]
                     : new Dictionary<Contact, int>();
 
-                foreach (var person in Participants.Keys)
+                foreach (var person in participants.Keys)
                     if (!allSequentialDays[currentDay].ContainsKey(person))
                         allSequentialDays[currentDay][person] = 0;
 
                 currentDay += oneDay;
             }
 
-            return allSequentialDays;
+            return new Tuple<Dictionary<DateTimeOffset, Dictionary<Contact, int>>, Dictionary<Contact, int>>(
+                allSequentialDays, participants);
         }
 
         public Dictionary<DayOfWeek, Dictionary<Contact, int>> GenerateWeekdayFrequencies(bool byLen = true)
@@ -194,9 +201,6 @@ namespace MessageAnalyzer
             foreach (var msg in Messages)
             {
                 var day = msg.Date.DayOfWeek;
-
-                if (!Participants.ContainsKey(msg.Author))
-                    AddParticipant(msg.Author);
 
                 if (!freqs[day].ContainsKey(msg.Author))
                     freqs[day][msg.Author] = 0;
@@ -218,9 +222,6 @@ namespace MessageAnalyzer
             {
                 var hour = DateTimeOffset.FromUnixTimeMilliseconds(msg.Timestamp).Hour;
 
-                if (!Participants.ContainsKey(msg.Author))
-                    AddParticipant(msg.Author);
-
                 if (!freqs[hour].ContainsKey(msg.Author))
                     freqs[hour][msg.Author] = 0;
 
@@ -228,6 +229,45 @@ namespace MessageAnalyzer
             }
 
             return freqs;
+        }
+
+        public Dictionary<string, Dictionary<string, int>> GenerateWordFrequencies()
+        {
+            var peopleWords = new Dictionary<string, Dictionary<string, int>>(2);
+
+            // very naive tokenizing
+            var splitOn = new[] {' ', ',', '.', '"', '?', '!', '(', ')'};
+
+            foreach (var person in People)
+                peopleWords.Add(person, new Dictionary<string, int>());
+
+            foreach (var msg in Messages)
+            {
+                var words = msg.Content.Split(splitOn, StringSplitOptions.RemoveEmptyEntries);
+
+                foreach (var w in words.Select(word => word.ToLower()))
+                    if (peopleWords[msg.Author.Name].ContainsKey(w))
+                        peopleWords[msg.Author.Name][w] += 1;
+                    else
+                        peopleWords[msg.Author.Name].Add(w, 1);
+            }
+
+//            foreach (var person in peopleWords)
+//            {
+//                Console.Out.WriteLine(person.Key);
+//                var thing = person.Value.OrderByDescending(entry => entry.Value);
+//
+//                Console.Out.WriteLine(thing.Sum(entry => entry.Value * entry.Key.Length));
+//
+//                foreach (var keyValuePair in thing)
+//                {
+//                    if (keyValuePair.Value > 100)
+//                        Console.Out.WriteLine(keyValuePair.Key + ' ' + keyValuePair.Value);
+//                }
+//                break;
+//            }
+
+            return peopleWords;
         }
 
         public void Save(string fileName = null)

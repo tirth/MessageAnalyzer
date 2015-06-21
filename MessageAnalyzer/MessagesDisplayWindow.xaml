@@ -14,7 +14,8 @@
         <Grid.RowDefinitions>
             <RowDefinition
                 Height="Auto" />
-            <RowDefinition />
+            <RowDefinition
+                Height="*"/>
             <RowDefinition
                 Height="Auto" />
         </Grid.RowDefinitions>
@@ -73,19 +74,20 @@
             CanUserResizeRows="False"
             IsReadOnly="True"
             MaxColumnWidth="600"
-            CanUserReorderColumns="False">
+            CanUserReorderColumns="False"
+            AutoGeneratingColumn="dataGrid_GeneratingColumn">
             
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Body">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style>
-                            <Setter
-                                Property="TextBlock.TextWrapping"
-                                Value="Wrap"/>
-                        </Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
-            </DataGrid.Columns>
+            <!--<DataGrid.Columns>
+                <DataGridTextColumn.ElementStyle>
+                    <Style
+                        TargetType="DataGridCell"
+                        x:Key="MessageBodyTextBox">
+                        <Setter
+                            Property="TextBlock.TextWrapping"
+                            Value="Wrap" />
+                    </Style>
+                </DataGridTextColumn.ElementStyle>
+            </DataGrid.Columns>-->
             
         </DataGrid>
 

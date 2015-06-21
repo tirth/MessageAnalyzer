@@ -9,7 +9,7 @@ namespace MessageAnalyzer
         {
             MessageBox.Show("This shit went sideways, tell Tirth that: " + e.Exception.Message + "\n" + e.Exception.StackTrace, 
                 "I need an adult!", MessageBoxButton.OK, MessageBoxImage.Error);
-            e.Handled = true;
+//            e.Handled = true;
         }
     }
 }

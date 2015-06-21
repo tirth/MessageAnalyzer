@@ -52,6 +52,8 @@ namespace MessageAnalyzer
                         oldestMessage = iterator;
                     }
 
+                // TODO: merge contacts
+
                 mergedThread.AddMessage(oldestMessage.Value.Current);
 
                 // exhausted current thread

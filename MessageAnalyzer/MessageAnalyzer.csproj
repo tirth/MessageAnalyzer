@@ -121,6 +121,9 @@
     <Compile Include="WhatsAppDialogBox.xaml.cs">
       <DependentUpon>WhatsAppDialogBox.xaml</DependentUpon>
     </Compile>
+    <Compile Include="WordFreqDialogBox.xaml.cs">
+      <DependentUpon>WordFreqDialogBox.xaml</DependentUpon>
+    </Compile>
     <Page Include="AnalyzedWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -161,6 +164,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="WhatsAppDialogBox.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="WordFreqDialogBox.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

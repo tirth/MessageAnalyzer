@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -54,6 +55,14 @@ namespace MessageAnalyzer
             display.AddRange(_thread.Select(msg => new DisplayMessage(msg)));
 
             DataGrid.ItemsSource = display;
+        }
+
+        private void dataGrid_GeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
+        {
+            if (e.PropertyName == "Body")
+            {
+//                e.Column.CellStyle = FindResource("MessageBodyTextBox") as Style;
+            }
         }
     }
 
